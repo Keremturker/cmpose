@@ -1,0 +1,16 @@
+{
+  "name": "cmpose-monorepo",
+  "private": true,
+  "workspaces": [
+    "packages/core",
+    "packages/mcp"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "npm test --workspaces --if-present",
+    "scan": "bash scripts/privacy-scan.sh",
+    "scan:test": "bash scripts/privacy-scan.test.sh"
+  }
+}

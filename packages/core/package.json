@@ -1,0 +1,40 @@
+{
+  "name": "@cmpose/core",
+  "version": "0.1.0",
+  "description": "cmpose project generator core (Compose Multiplatform)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Keremturker/cmpose.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://github.com/Keremturker/cmpose/tree/main/packages/core#readme",
+  "bugs": {
+    "url": "https://github.com/Keremturker/cmpose/issues"
+  },
+  "keywords": [
+    "compose-multiplatform",
+    "kotlin-multiplatform",
+    "kmp",
+    "generator",
+    "scaffold",
+    "android",
+    "ios"
+  ],
+  "main": "src/index.js",
+  "files": [
+    "src"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "fs-extra": "^11.3.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

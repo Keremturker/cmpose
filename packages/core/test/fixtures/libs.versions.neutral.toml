@@ -1,0 +1,80 @@
+[versions]
+agp = "9.2.1"
+androidx-activity = "1.13.0"
+androidx-lifecycle = "2.9.6"
+composeMultiplatform = "1.11.1"
+datastore = "1.2.1"
+detekt = "2.0.0-alpha.3"
+kotlin = "2.3.21"
+kotlinxCoroutinesCore = "1.11.0"
+navigationCompose = "2.9.2"
+koinCoreVersion = "4.2.1"
+kotlinxSerializationJson = "1.11.0"
+ktorClientCore = "3.5.0"
+coil = "3.4.0"
+kermit = "2.2.0"
+
+ksp = "2.3.9"
+koin-annotations = "2.3.1"
+networkMonitor = "0.1.1"
+
+[libraries]
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity" }
+androidx-datastore = { module = "androidx.datastore:datastore", version.ref = "datastore" }
+androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
+androidx-lifecycle-viewmodelCompose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidx-lifecycle" }
+androidx-lifecycle-runtimeCompose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
+compose-gradle-plugin = { module = "org.jetbrains.compose:compose-gradle-plugin", version.ref = "composeMultiplatform" }
+detekt-plugin = { module = "dev.detekt:detekt-gradle-plugin", version.ref = "detekt" }
+detekt-formatting = { module = "dev.detekt:detekt-rules-ktlint-wrapper", version.ref = "detekt" }
+gradle = { module = "com.android.tools.build:gradle", version.ref = "agp" }
+kotlin-serialization = { module = "org.jetbrains.kotlin:kotlin-serialization", version.ref = "kotlin" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutinesCore" }
+navigation-compose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
+koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose", version.ref = "koinCoreVersion" }
+koin-android = { module = "io.insert-koin:koin-android", version.ref = "koinCoreVersion" }
+koin-core = { module = "io.insert-koin:koin-core", version.ref = "koinCoreVersion" }
+koin-compose = { module = "io.insert-koin:koin-compose", version.ref = "koinCoreVersion" }
+koin-composeVM = { module = "io.insert-koin:koin-compose-viewmodel", version.ref = "koinCoreVersion" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
+org-jetbrains-kotlin-multiplatform-gradle-plugin = { module = "org.jetbrains.kotlin.multiplatform:org.jetbrains.kotlin.multiplatform.gradle.plugin", version.ref = "kotlin" }
+coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
+coil-network-ktor3 = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coil" }
+kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
+kermit-test = { module = "co.touchlab:kermit-test", version.ref = "kermit" }
+
+koin-annotations = { module = "io.insert-koin:koin-annotations", version.ref = "koin-annotations" }
+koin-ksp-compiler = { module = "io.insert-koin:koin-ksp-compiler", version.ref = "koin-annotations" }
+
+ksplib = { module = "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin", version.ref = "ksp" }
+
+ktor-client-android = { module = "io.ktor:ktor-client-android", version.ref = "ktorClientCore" }
+ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktorClientCore" }
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktorClientCore" }
+ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktorClientCore" }
+ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktorClientCore" }
+ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktorClientCore" }
+
+networkMonitor-debug = { module = "com.kturker:networkmonitor", version.ref = "networkMonitor" }
+networkMonitor-release = { module = "com.kturker:networkmonitor-noop", version.ref = "networkMonitor" }
+
+[plugins]
+androidApplication = { id = "com.android.application", version.ref = "agp" }
+androidLibrary = { id = "com.android.library", version.ref = "agp" }
+composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
+composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+jetbrainsKotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+androidKotlinMultiplatformLibrary = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
+androidLint = { id = "com.android.lint", version.ref = "agp" }
+detekt = { id = "dev.detekt", version.ref = "detekt" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+
+kmp-library-plugin = { id = "dev.cmpose.app.kmp.library", version = "unspecified" }
+compose-multiplatform-plugin = { id = "dev.cmpose.app.compose.multiplatform", version = "unspecified" }
+multiplatform-application-plugin = { id = "dev.cmpose.app.multiplatformApplication", version = "unspecified" }
+feature-contract-plugin = { id = "dev.cmpose.app.feature.contract", version = "unspecified" }
+feature-data-plugin = { id = "dev.cmpose.app.feature.data", version = "unspecified" }
+feature-domain-plugin = { id = "dev.cmpose.app.feature.domain", version = "unspecified" }
+feature-presentation-plugin = { id = "dev.cmpose.app.feature.presentation", version = "unspecified" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
