@@ -6,7 +6,7 @@ Generate Compose Multiplatform projects on your own machine — from any AI agen
 - `@cmpose/mcp` — a local stdio MCP server with two tools: `cmp_describe` and `cmp_generate`.
 
 Requires Node.js 20+ and git. The first generation downloads the pinned template
-(`Keremturker/CmpTemplate`) into `~/.cache/cmpose` (override: `CMPOSE_CACHE_DIR`).
+(`Keremturker/cmpose-template`) into `~/.cache/cmpose` (override: `CMPOSE_CACHE_DIR`).
 
 ## Use with Claude Code
 
@@ -40,4 +40,4 @@ and rules.
 
 The 5 real-template tests in `packages/core/test/fileService.importSort.test.js` run only
 when `CMP_REAL_TEMPLATE_DIR` points to a checkout of the template, e.g.
-`CMP_REAL_TEMPLATE_DIR=/path/to/CmpTemplate npm test`; otherwise they are skipped.
+`CMP_REAL_TEMPLATE_DIR=/path/to/template-checkout npm test`; otherwise they are skipped.

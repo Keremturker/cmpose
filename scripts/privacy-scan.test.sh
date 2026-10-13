@@ -65,7 +65,7 @@ printf '%s\n' "$out" | sed -n '/^== private backend marker$/,/^==/p' | grep -qF 
 # --- only allowed values: must pass ---------------------------------------------------
 repo clean
 plant clean allowed.txt "$(printf '%s\n' \
-    "repo: 'Keremturker/CmpTemplate'" \
+    "repo: 'Keremturker/CmpTemplate' and 'Keremturker/cmpose-template'" \
     'url https://github.com/Keremturker/cmpose.git and https://github.com/Keremturker/cmpose#readme' \
     "synthetic commits 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' and '0000000000000000000000000000000000000000'" \
     'sha256 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef' \

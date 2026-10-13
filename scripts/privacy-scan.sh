@@ -35,14 +35,14 @@ check 'private path' '' '/Users/|C:\\Users\\|(^|[[:space:]"'"'"'`=(])/(home|user
 
 # Case-insensitive; Turkish letters spelled out because LC_ALL=C folds ASCII only.
 # Allowlist (case-sensitive, exact):
-#   Keremturker/CmpTemplate  the public template repo (pins.js, README)
+#   Keremturker/cmpose-template  the public template snapshots (pins.js, README); CmpTemplate its private source
 #   Keremturker/cmpose       this repository (package.json repository/homepage/bugs);
 #                            any other Keremturker/<repo> is still reported
 #   com.kturker / com/kturker / com.kturker:  the template's own package and Maven group
 #                            (com.kturker.multiplatform, com.kturker:networkmonitor), also
 #                            regex-escaped in tests (com\.kturker, com\/kturker)
 #   'kturker'                path segment of that package in a test (path.join('com', 'kturker'))
-NAME_ALLOW='(^|[^A-Za-z0-9_])(Keremturker/(CmpTemplate|cmpose)|com\\?[./:]kturker|'"'"'kturker'"'"')([^A-Za-z0-9_-]|$)'
+NAME_ALLOW='(^|[^A-Za-z0-9_])(Keremturker/(CmpTemplate|cmpose-template|cmpose)|com\\?[./:]kturker|'"'"'kturker'"'"')([^A-Za-z0-9_-]|$)'
 check 'personal name' '-i' 'kerem|t(u|ü|Ü)rker' "$NAME_ALLOW"
 
 # IPv4 allowlist (addresses that can never point at a real server):
