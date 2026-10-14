@@ -1,8 +1,9 @@
 # @cmpose/mcp
 
 Ask your AI agent for a **Compose Multiplatform** app and get a real, buildable Android + iOS
-project on disk, generated locally from a tested template. This is a local stdio MCP server
-with two tools, `cmp_describe` and `cmp_generate`. It is the same generator that runs
+project on disk, generated locally from a tested template. It also generates **Unity** mobile
+games (Android + iOS). This is a local stdio MCP server with four tools: `cmp_describe`,
+`cmp_generate`, `game_describe` and `game_generate`. It is the same generator that runs
 [cmpose.dev](https://cmpose.dev), with no account, no API key and no upload.
 
 > "Create a blank Compose Multiplatform app called Habits, package com.acme.habits, in
@@ -51,6 +52,29 @@ screen, a `build-logic` with convention plugins, and a README with a release che
 - **CI:** an optional GitHub Actions workflow.
 - **Your names everywhere:** package, bundle id, app name, min SDK and iOS deployment target.
 
+## Games (Unity)
+
+> "Create a 2D Unity game called SkyHopper, package com.acme.skyhopper, in ~/Projects, blank,
+> with ads and leaderboards"
+
+Every game project is a Unity 6 project (editor 6000.3.25f1, URP) for Android and iOS, with
+VContainer + UniTask, a uGUI interface, a Boot → Menu → Game scene flow, a settings screen,
+saving, deep links, and in-app review and update check.
+
+- **Template:** `showcase` (a sample game with every flag on: a 2D runner, or a 3D track with
+  `render: "3d"`) or `blank` (an empty game with the flags you pick). `render` is `2d`
+  (default) or `3d`.
+- **Flags for `blank`:** `saveSystem`, `uiTheme`, `multiLang`, `network`, `networkInspector`
+  (needs `network`, added for you), `purchases` (RevenueCat), `ads` (AdMob) and
+  `leaderboards` (Google Play Games and Game Center).
+- **Your own feature modules (`blank`):** up to 3.
+- **IDs:** `ids` takes your real AdMob (`admob`), RevenueCat (`revenueCat`) and Play Games +
+  Game Center (`gameServices`) IDs, each group with its flag; `game_describe` lists the fields.
+  A group you leave out keeps the test IDs / placeholders and is reported as a warning.
+- **CI:** an optional GitHub Actions workflow with GameCI.
+- **Your names everywhere:** package (application identifier), company name, app name, min SDK
+  (25+) and iOS deployment target (15.0+).
+
 ## Tools
 
 - `cmp_describe`: the defaults, the options and the rules (name formats, limits, which option
@@ -60,13 +84,22 @@ screen, a `build-logic` with convention plugins, and a README with a release che
   `templateType`, `features`, `featuresConfig`, `minSdk`, `iosVersion`, `ci`, `templateRef`.
   It returns the project path, the template version it used, warnings (e.g. test ad IDs to
   replace) and next steps.
+- `game_describe`: the Unity game generator's engine and editor version, template types,
+  renders, flags and their dependencies, ID groups, defaults and limits. Agents call it first.
+- `game_generate`: creates the game. Required: `projectName` (letters or digits, starting with
+  a letter), `appName`, `packageName` (e.g. `com.acme.skyhopper`) and an absolute `outputDir`.
+  Optional: `companyName`, `templateType`, `render`, `flags`, `features`, `minSdk`,
+  `iosVersion`, `ci`, `ids`, `templateRef`. It never overwrites a non-empty folder.
 
 ## How it works
 
 Generation runs entirely on your machine. The first call downloads the pinned template
 ([Keremturker/cmpose-template](https://github.com/Keremturker/cmpose-template)) into
-`~/.cache/cmpose` (override with `CMPOSE_CACHE_DIR`), and later calls reuse it. Each release
-pins one template tag, so `@cmpose/mcp@x.y.z` always generates the same project.
+`~/.cache/cmpose` (override with `CMPOSE_CACHE_DIR`), and later calls reuse it. Games come the
+same way from the pinned game template
+([Keremturker/cmpose-game-template](https://github.com/Keremturker/cmpose-game-template)); Unity
+never runs during generation. Each release pins one tag of each template, so `@cmpose/mcp@x.y.z`
+always generates the same project.
 
 Source and issues: [github.com/Keremturker/cmpose](https://github.com/Keremturker/cmpose).
 MIT licensed. The projects you generate are yours.

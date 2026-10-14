@@ -7,8 +7,16 @@ theming") and get a buildable Android + iOS project from a tested template: Koin
 Ktor, Room, DataStore, theming, multi-language, RevenueCat purchases, AdMob ads, detekt and CI
 as options. What each option adds: [packages/mcp/README.md](packages/mcp/README.md).
 
+It also generates Unity mobile games ("a 2D Unity game called SkyHopper with ads and
+leaderboards"): a Unity 6 (URP) Android + iOS project from the pinned game template
+(`Keremturker/cmpose-game-template`), as a `showcase` sample game (2D runner or 3D track) or a
+`blank` game with flags for saving, theming, multi-language, networking, RevenueCat purchases,
+AdMob ads and Play Games / Game Center leaderboards, up to 3 feature modules, your real IDs and
+an optional GameCI workflow.
+
 - `@cmpose/core` — the generator library (the same code [cmpose.dev](https://cmpose.dev) runs).
-- `@cmpose/mcp` — a local stdio MCP server with two tools: `cmp_describe` and `cmp_generate`.
+- `@cmpose/mcp` — a local stdio MCP server with four tools: `cmp_describe`, `cmp_generate`,
+  `game_describe` and `game_generate`.
 
 Requires Node.js 20+ and git. The first generation downloads the pinned template
 (`Keremturker/cmpose-template`) into `~/.cache/cmpose` (override: `CMPOSE_CACHE_DIR`).
@@ -35,7 +43,9 @@ Add the server to the client's `mcpServers` configuration:
 `cmp_generate` takes `projectName`, `appName`, `packageName` and an absolute `outputDir`
 (required), plus optional `templateType` (`showcase` | `blank`), `features`, `featuresConfig`
 (blank only), `minSdk`, `iosVersion`, `ci` and `templateRef`; `cmp_describe` lists the defaults
-and rules.
+and rules. `game_generate` takes the same required fields plus optional `companyName`,
+`templateType`, `render` (`2d` | `3d`), `flags` and `features` (blank only), `minSdk`,
+`iosVersion`, `ci`, `ids` and `templateRef`; `game_describe` lists the flags, ID groups and limits.
 
 ## Develop
 
