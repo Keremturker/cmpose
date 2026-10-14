@@ -112,4 +112,4 @@ async function runGenerate(args, { cacheDir, remoteUrl, onProgress = () => { }, 
     }
 }
 
-module.exports = { runGenerate, removeEmptyDir, NEXT_STEPS };
+module.exports = { runGenerate, removeEmptyDir, targetProblem, NEXT_STEPS };

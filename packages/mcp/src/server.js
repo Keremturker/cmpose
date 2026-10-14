@@ -7,10 +7,30 @@ const core = require('@cmpose/core');
 const pkg = require('../package.json');
 const { describe } = require('./describe');
 const { runGenerate } = require('./generate');
+const { runGameGenerate } = require('./gameGenerate');
 
 const GENERATE_DESCRIPTION = 'Generate a Compose Multiplatform (Android + iOS) project on this machine. ' +
     'Call cmp_describe first for the options, defaults and validation rules. ' +
     'Writes <outputDir>/<projectName>; never overwrites an existing non-empty folder.';
+
+const GAME_GENERATE_DESCRIPTION = 'Generate a Unity 6 (Android + iOS) mobile game project on this machine. ' +
+    'Call game_describe first for the flags, defaults and validation rules. ' +
+    'showcase has every flag on; flags and features apply to blank only. ' +
+    'Writes <outputDir>/<projectName>; never overwrites an existing non-empty folder.';
+
+// MCP progress notifications for a tool call that sent a progress token
+function progressReporter(extra, total) {
+    const progressToken = extra && extra._meta && extra._meta.progressToken;
+    let step = 0;
+    return (message) => {
+        if (progressToken === undefined) return;
+        step += 1;
+        extra.sendNotification({
+            method: 'notifications/progress',
+            params: { progressToken, progress: step, total, message }
+        }).catch(() => { });
+    };
+}
 
 function createServer({ cacheDir, remoteUrl } = {}) {
     const server = new McpServer({ name: 'cmpose', version: pkg.version });
@@ -39,19 +59,41 @@ function createServer({ cacheDir, remoteUrl } = {}) {
             ci: z.boolean().optional(),
             templateRef: z.string().optional().describe('Override the pinned template tag')
         }
-    }, async (args, extra) => {
-        const progressToken = extra && extra._meta && extra._meta.progressToken;
-        let step = 0;
-        const onProgress = (message) => {
-            if (progressToken === undefined) return;
-            step += 1;
-            extra.sendNotification({
-                method: 'notifications/progress',
-                params: { progressToken, progress: step, total: 2, message }
-            }).catch(() => { });
-        };
-        return runGenerate(args, { cacheDir, remoteUrl, onProgress, generatorVersion: `mcp@${pkg.version}` });
+    }, async (args, extra) => runGenerate(args, {
+        cacheDir, remoteUrl, onProgress: progressReporter(extra, 2), generatorVersion: `mcp@${pkg.version}`
+    }));
+
+    server.registerTool('game_describe', {
+        description: 'Describe the Unity game generator: engine and editor version, template types, renders, flags and their dependencies, ID groups, defaults, validation limits and the pinned game template.',
+        inputSchema: {}
+    }, async () => {
+        const facts = core.game.describeGame();
+        return { content: [{ type: 'text', text: JSON.stringify(facts, null, 2) }], structuredContent: facts };
     });
+
+    server.registerTool('game_generate', {
+        description: GAME_GENERATE_DESCRIPTION,
+        inputSchema: {
+            projectName: z.string().describe('Letters or digits, starting with a letter, no spaces (e.g. SkyHopper)'),
+            appName: z.string().describe('Display name (e.g. Sky Hopper)'),
+            packageName: z.string().describe('Reverse-domain application identifier (e.g. com.example.skyhopper)'),
+            outputDir: z.string().describe('Absolute path of the folder to create the project in'),
+            companyName: z.string().optional().describe('Company name (defaults to the second packageName segment, capitalized)'),
+            templateType: z.enum(['showcase', 'blank']).optional()
+                .describe('showcase (default): the sample games with every flag on; blank: an empty game with the flags and features you pick'),
+            render: z.enum(['2d', '3d']).optional().describe('Render setup (default 2d)'),
+            flags: z.array(z.string()).optional()
+                .describe('blank only: flags from game_describe (required flags are added); showcase has every flag on'),
+            features: z.array(z.string()).optional().describe('blank only: extra feature modules (lower case names)'),
+            minSdk: z.union([z.string(), z.number()]).optional().describe('Android min SDK, e.g. "25" or 25'),
+            iosVersion: z.union([z.string(), z.number()]).optional().describe('iOS deployment target, e.g. "15.0"'),
+            ci: z.boolean().optional(),
+            ids: z.record(z.string(), z.record(z.string(), z.string())).optional()
+                .describe('Real IDs by group (admob, revenueCat, gameServices; fields in game_describe), each needing its flag. ' +
+                    'A group left out keeps the test IDs / placeholders, reported as a warning'),
+            templateRef: z.string().optional().describe('Override the pinned game template tag')
+        }
+    }, async (args, extra) => runGameGenerate(args, { cacheDir, remoteUrl, onProgress: progressReporter(extra, 2) }));
 
     return server;
 }
