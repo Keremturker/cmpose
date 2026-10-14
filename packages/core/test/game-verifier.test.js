@@ -112,3 +112,35 @@ test('a marker in a folder whose name holds " in " is read from the right file',
     await fs.appendFile(path.join(dir, folder, 'Rocket.cs'), '// cmpose:ads\n');
     assert.deepEqual(await verifyGameProject(dir), ['marker // cmpose: in Assets/_Project/Fun in Space/Rocket.cs']);
 });
+
+test('camelCase extension markers stay too', async (t) => {
+    const dir = await generated(t);
+    await fs.appendFile(path.join(dir, `${P}/App/Game/GameInstaller.cs`), '    // cmpose:myExt:start\n    // cmpose:myExt:end\n');
+    assert.deepEqual(await verifyGameProject(dir), []);
+});
+
+test('guid and residue problems come as one sorted list', async (t) => {
+    const dir = await generated(t);
+    await fs.outputFile(path.join(dir, `${P}/Core/Ads/NoMeta.cs`), '// cmpose:ads\n');
+    assert.deepEqual(await verifyGameProject(dir), [
+        'marker // cmpose: in Assets/_Project/Core/Ads/NoMeta.cs',
+        'missing-meta Assets/_Project/Core/Ads/NoMeta.cs'
+    ]);
+});
+
+test('a file with several marker problems is read once to check them', async (t) => {
+    const dir = await generated(t);
+    const file = path.join(dir, `${P}/Core/Ads/AdsConfig.cs`);
+    await fs.appendFile(file, '// cmpose:ads\n// /cmpose:ads\n');
+    const original = fs.readFile;
+    let reads = 0;
+    fs.readFile = function (p, ...rest) {
+        if (p === file) reads += 1;
+        return original.call(this, p, ...rest);
+    };
+    t.after(() => { fs.readFile = original; });
+    const problems = await verifyGameProject(dir);
+    assert.equal(problems.length, 2);
+    // findResidue reads it once to find the tokens, the marker check once for both
+    assert.equal(reads, 2);
+});
