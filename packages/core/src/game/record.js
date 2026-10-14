@@ -1,0 +1,45 @@
+'use strict';
+const path = require('path');
+const fs = require('fs-extra');
+const { GAME_SCHEMA } = require('./contract');
+
+const RECORD_PATH = path.join('.cmpose', 'generation.json');
+
+// Whether each ID group's real values were written ('custom'), the template's test IDs stay ('test') or its
+// flag is off ('off'). The values themselves are never recorded.
+function idStatuses(flags, ids) {
+    const out = {};
+    for (const [group, { flag }] of Object.entries(GAME_SCHEMA.idGroups)) {
+        if (!flags.includes(flag)) out[group] = 'off';
+        else out[group] = ids && ids[group] ? 'custom' : 'test';
+    }
+    return out;
+}
+
+/** The .cmpose/generation.json content of a generated Unity game (no personal data, no ID values) */
+function buildGameRecord({ template, coreVersion, value, now = new Date() }) {
+    return {
+        generator: '@cmpose/core',
+        coreVersion,
+        engine: 'unity',
+        unityVersion: GAME_SCHEMA.unityVersion,
+        templateType: value.templateType,
+        render: value.render,
+        flags: value.flags.slice(),
+        features: value.features.slice(),
+        ci: value.ci === true,
+        minSdk: value.minSdk,
+        iosVersion: value.iosVersion,
+        ids: idStatuses(value.flags, value.ids),
+        template: { repo: template.repo, ref: template.ref, commit: template.commit },
+        generatedAt: now.toISOString()
+    };
+}
+
+async function writeGameRecord(projectDir, record) {
+    const file = path.join(projectDir, RECORD_PATH);
+    await fs.outputFile(file, `${JSON.stringify(record, null, 2)}\n`);
+    return file;
+}
+
+module.exports = { RECORD_PATH, buildGameRecord, writeGameRecord };
