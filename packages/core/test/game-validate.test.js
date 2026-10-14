@@ -63,3 +63,8 @@ test('id values that would break C#, XML or YAML', () => {
     ok({ ...b, ids: { gameServices: gs } });
     for (const v of ['a"b', 'a\\b', 'a$b', 'a\nb', 'replace_me.x']) bad({ ...b, ids: { gameServices: { ...gs, leaderboardIos: v } } }, 'ids.gameServices.leaderboardIos');
 });
+test('inherited keys and non-object ids never throw', () => {
+    const b = { ...base, templateType: 'blank', flags: ['ads'] };
+    for (const ids of [JSON.parse('{"constructor":{}}'), JSON.parse('{"__proto__":{}}'), { toString: {} }, 'x', []]) bad({ ...b, ids }, 'ids');
+    bad({ ...b, flags: ['constructor'] }, 'flags');
+});

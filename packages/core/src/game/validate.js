@@ -51,7 +51,7 @@ function validateIds(ids, flags) {
     if (!isObject(ids)) return { error: 'ids must be an object' };
     const out = {};
     for (const group of Object.keys(ids)) {
-        const def = S.idGroups[group];
+        const def = Object.hasOwn(S.idGroups, group) ? S.idGroups[group] : null;
         if (!def) return { error: `ids.${group} is not a known group (${Object.keys(S.idGroups).join(', ')})` };
         const g = ids[group];
         if (!isObject(g)) return { error: `ids.${group} must be an object` };
@@ -104,7 +104,7 @@ function validateGame(input) {
         const wanted = input.flags === undefined ? [] : input.flags;
         if (!Array.isArray(wanted) || wanted.some((f) => !S.flags.includes(f))) return fail(`flags must be an array of: ${S.flags.join(', ')}`);
         const set = new Set(wanted);
-        for (const f of wanted) for (const r of S.flagRequires[f] || []) set.add(r);
+        for (const f of wanted) for (const r of (Object.hasOwn(S.flagRequires, f) ? S.flagRequires[f] : [])) set.add(r);
         flags = S.flags.filter((f) => set.has(f));
     }
 
