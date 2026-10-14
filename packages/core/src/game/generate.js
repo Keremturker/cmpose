@@ -14,8 +14,9 @@ const { applyGameReadme } = require('./readme');
 const { buildGameRecord, writeGameRecord } = require('./record');
 const { verifyGameProject } = require('./verifier');
 
-// The template cache's own records and Unity's local state never reach the project
-const LEFTOVERS = ['.git', COMMIT_FILE_NAME, REF_FILE_NAME, 'Library', 'Temp', 'Logs', 'UserSettings'];
+// The template cache's own records and Unity's local state never reach the project; nor does the template's
+// LICENSE (the generated project is the user's, to license as they choose)
+const LEFTOVERS = ['.git', COMMIT_FILE_NAME, REF_FILE_NAME, 'LICENSE', 'Library', 'Temp', 'Logs', 'UserSettings'];
 const PACKAGE_GUIDS = path.join('.cmpose', 'package-guids.txt');
 
 function gameWarnings(value) {

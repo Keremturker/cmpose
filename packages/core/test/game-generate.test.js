@@ -43,6 +43,7 @@ async function seeded(t) {
     await fs.outputFile(path.join(dir, '.template-ref'), 'game-template-test\n');
     await fs.outputFile(path.join(dir, '.template-commit'), 'abc123\n');
     await fs.outputFile(path.join(dir, '.git/HEAD'), 'ref: refs/heads/main\n');
+    await fs.outputFile(path.join(dir, 'LICENSE'), 'MIT License\n');
     for (const local of ['Library', 'Temp', 'Logs', 'UserSettings']) await fs.outputFile(path.join(dir, local, 'x.txt'), 'UnityBase\n');
     return dir;
 }
@@ -77,7 +78,7 @@ test('blank with a module and no flags: the module stays, every flag part goes, 
     assert.equal(await exists(dir, `${P}/Core/Ads`), false);
     assert.equal(await exists(dir, `${P}/Features/Showcase`), false);
     assert.deepEqual(await grepTree(dir, 'Kturker.UnityBase'), []);
-    for (const gone of ['.git', '.template-ref', '.template-commit', 'Library', 'Temp', 'Logs', 'UserSettings',
+    for (const gone of ['.git', '.template-ref', '.template-commit', 'LICENSE', 'Library', 'Temp', 'Logs', 'UserSettings',
         '.cmpose/package-guids.txt', '.cmpose/flags.json', '.github/workflows/ci.yml']) {
         assert.equal(await exists(dir, gone), false, gone);
     }
