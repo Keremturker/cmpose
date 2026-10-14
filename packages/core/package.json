@@ -29,7 +29,8 @@
     "node": ">=20"
   },
   "scripts": {
-    "test": "node --test test/*.test.js"
+    "test": "node --test test/*.test.js",
+    "prepublishOnly": "node scripts/check-pins.js"
   },
   "dependencies": {
     "fs-extra": "^11.3.2"
