@@ -33,5 +33,6 @@ module.exports = {
     generationWarnings: require('./warnings').generationWarnings,
     generateCmpProject: require('./generate').generateCmpProject,
     templateCache: require('./templateCache'),
+    game: require('./game'),
     TemplateFetchError: require('./templateCache').TemplateFetchError
 };

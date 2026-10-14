@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!129 &1
+PlayerSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 28
+  productGUID: 0123456789abcdef0123456789abcdef
+  defaultScreenOrientation: 4
+  companyName: Kturker
+  productName: UnityBase
+  bundleVersion: 1.0.0
+  overrideDefaultApplicationIdentifier: 0
+  AndroidBundleVersionCode: 1
+  AndroidMinSdkVersion: 25
+  AndroidTargetSdkVersion: 0
+  iOSTargetOSVersionString: 15.0
+  applicationIdentifier:
+    Android: com.kturker.unitybase
+    iPhone: com.kturker.unitybase
+  iOSURLSchemes: []
+  scriptingDefineSymbols:
+    Android: CMPOSE_ADS;CMPOSE_PURCHASES
+    iPhone: CMPOSE_ADS;CMPOSE_PURCHASES
+  additionalCompilerArguments: {}
+  scriptingBackend:
+    Android: 1
+  AndroidTargetArchitectures: 2
+--- !u!114 &2
+MonoBehaviour:
+  companyName: NotPlayerSettings
