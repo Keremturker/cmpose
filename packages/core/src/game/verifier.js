@@ -3,16 +3,20 @@ const path = require('path');
 const fs = require('fs-extra');
 const { checkGuidIntegrity, readGuidAllowlist } = require('./guidIntegrity');
 const { findResidue } = require('./residue');
+const { escapeRe } = require('./unityYaml');
 
 const IDENTITY_RULE = { name: 'old identity', tokens: ['Kturker.UnityBase', 'UnityBase', 'unitybase', 'com.kturker'] };
 const MARKER_RULE = { name: 'marker', tokens: ['// cmpose:', '// /cmpose:'], extensions: ['.cs'] };
-// The generated GameInstaller keeps these two lines: the in-game guide tells users to add installers between them
-const KEPT_MARKER_LINE = /^[ \t]*\/\/ cmpose:features:(?:start|end)[ \t]*\r?$/gm;
+// Extension points stay as whole lines (// cmpose:features:start … // cmpose:features:end in the GameInstaller,
+// // cmpose:boot-steps:start … :end in the BootInstaller): users add their own lines between them
+const KEPT_MARKER_LINE = /^[ \t]*\/\/ cmpose:[a-z][a-z0-9-]*:(?:start|end)[ \t]*\r?$/gm;
+const MARKER_PROBLEM = new RegExp(`^marker (${MARKER_RULE.tokens.map(escapeRe).join('|')}) in (.+)$`);
 const IGNORE = ['.cmpose/'];
 
-// A marker problem stands only when the token is still there once the kept features marker lines are dropped
+// A marker problem stands only when the token is still there once the kept extension-point lines are dropped.
+// The token is one of the rule's own, so a path holding ' in ' is read whole.
 async function stillMarked(projectDir, problem) {
-    const m = /^marker (.+) in (.+)$/.exec(problem);
+    const m = MARKER_PROBLEM.exec(problem);
     const text = (await fs.readFile(path.join(projectDir, m[2]), 'utf8')).replace(KEPT_MARKER_LINE, '');
     return text.includes(m[1]);
 }

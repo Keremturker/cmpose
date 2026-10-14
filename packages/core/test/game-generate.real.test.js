@@ -24,6 +24,10 @@ test('the real template generates blank with every flag, two modules and CI, and
     const result = await generateGame(r.value, {
         projectDir: dir, template: { repo: 'real', ref: 'local', commit: null }, coreVersion: 'test', now: new Date(0)
     });
+    // generateGame verified the project before dropping the package guid allowlist (step 8); verify again with it put back
+    const allowlist = path.join(dir, '.cmpose/package-guids.txt');
+    assert.equal(await fs.pathExists(allowlist), false);
+    await fs.copy(path.join(REAL, '.cmpose/package-guids.txt'), allowlist);
     assert.deepEqual(await verifyGameProject(dir), []);
     assert.deepEqual(result.features, ['shop', 'quests']);
     assert.ok(await fs.pathExists(path.join(dir, 'Assets/_Project/Features/Shop')));

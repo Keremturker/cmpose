@@ -74,3 +74,14 @@ test('renames folders deepest first and keeps their .meta', async () => {
     assert.ok(await fs.pathExists(path.join(dir, 'Assets/Acme.SkyHopper.Mods.meta')));
     assert.ok(renamedFiles >= 4);
 });
+
+test('every applicationIdentifier entry the template has gets the package, Standalone included', async () => {
+    const dir = await fixture();
+    const file = path.join(dir, 'ProjectSettings/ProjectSettings.asset');
+    await fs.writeFile(file, SETTINGS.replace('  applicationIdentifier: {}\n',
+        '  applicationIdentifier:\n    Android: com.kturker.unitybase\n    Standalone: com.kturker.unitybase\n    iPhone: com.kturker.unitybase\n    tvOS: com.kturker.unitybase\n'));
+    await applyGameIdentity(dir, ARGS);
+    const settings = await fs.readFile(file, 'utf8');
+    assert.match(settings, /  applicationIdentifier:\n    Android: com\.acme\.skyhopper\n    Standalone: com\.acme\.skyhopper\n    iPhone: com\.acme\.skyhopper\n    tvOS: com\.acme\.skyhopper\n/);
+    assert.ok(!settings.includes('com.kturker'));
+});

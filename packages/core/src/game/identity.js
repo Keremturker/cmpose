@@ -1,7 +1,7 @@
 const path = require('path');
 const fs = require('fs-extra');
-const { escapeRe } = require('./unityYaml');
-const { applyIdentity } = require('./projectSettings');
+const { escapeRe, getMapKeys, setMapEntry } = require('./unityYaml');
+const { PLAYER, applyIdentity } = require('./projectSettings');
 
 const TEXT_EXTENSIONS = new Set(['.cs', '.asmdef', '.asmref', '.prefab', '.unity', '.asset', '.mat', '.json', '.md', '.txt',
     '.xml', '.ruleset', '.yml', '.uss', '.uxml']);
@@ -61,10 +61,17 @@ async function applyGameIdentity(projectDir, { companyName, projectName, appName
     // 3. PlayerSettings
     const settingsFile = path.join(projectDir, 'ProjectSettings', 'ProjectSettings.asset');
     const settings = await fs.readFile(settingsFile, 'utf8');
-    await fs.writeFile(settingsFile, applyIdentity(settings, {
+    let identified = applyIdentity(settings, {
         companyName, productName: appName, bundleId: packageName, version: '1.0.0',
         androidMinSdk: minSdk, iosTarget: iosVersion, urlScheme: projectName.toLowerCase()
-    }));
+    });
+    // applyIdentity sets Android and iPhone; any other platform the template lists (Standalone …) gets the package too
+    for (const platform of getMapKeys(identified, 'applicationIdentifier', { doc: PLAYER })) {
+        if (platform !== 'Android' && platform !== 'iPhone') {
+            identified = setMapEntry(identified, 'applicationIdentifier', platform, packageName, { doc: PLAYER });
+        }
+    }
+    await fs.writeFile(settingsFile, identified);
     return { renamedFiles };
 }
 

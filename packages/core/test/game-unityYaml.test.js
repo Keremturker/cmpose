@@ -79,3 +79,10 @@ test('setMapEntry refuses a non-empty inline map', () => {
     const t = PS.replace('  additionalCompilerArguments: {}', '  additionalCompilerArguments: {Android: x}');
     assert.throws(() => setMapEntry(t, 'additionalCompilerArguments', 'iPhone', 'y', { doc: PLAYER }), UnityYamlError);
 });
+
+test('getMapKeys lists a block map\'s sub-keys in order, [] for an empty map', () => {
+    const { getMapKeys } = require('../src/game/unityYaml');
+    const text = '--- !u!129 &1\nPlayerSettings:\n  applicationIdentifier:\n    Android: a.b.c\n    Standalone: a.b.c\n  other: {}\n';
+    assert.deepEqual(getMapKeys(text, 'applicationIdentifier', { doc: { classId: 129 } }), ['Android', 'Standalone']);
+    assert.deepEqual(getMapKeys(text, 'other'), []);
+});

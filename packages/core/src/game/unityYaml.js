@@ -143,6 +143,22 @@ function getMapEntry(text, mapKey, subKey, { doc } = {}) {
     return value;
 }
 
+// The sub-keys of a block map, in file order ([] for an empty map)
+function getMapKeys(text, mapKey, { doc } = {}) {
+    let keys = [];
+    withScope(text, doc, (segment) => {
+        const lines = splitLines(segment);
+        const { header, end } = locateMap(lines, mapKey);
+        keys = [];
+        for (let i = header + 1; i < end; i++) {
+            const m = /^ {4}([^\s:][^:]*):(?:[ \t]|$)/.exec(body(lines[i]));
+            if (m) keys.push(m[1]);
+        }
+        return segment;
+    });
+    return keys;
+}
+
 function removeMapEntry(text, mapKey, subKey, { doc } = {}) {
     return withScope(text, doc, (segment) => {
         const lines = splitLines(segment);
@@ -173,5 +189,5 @@ function setList(text, key, items, { doc } = {}) {
 }
 
 module.exports = {
-    UnityYamlError, escapeRe, findDocument, setScalar, getScalar, setMapEntry, getMapEntry, removeMapEntry, setList
+    UnityYamlError, escapeRe, findDocument, setScalar, getScalar, setMapEntry, getMapEntry, getMapKeys, removeMapEntry, setList
 };

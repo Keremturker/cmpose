@@ -81,3 +81,34 @@ test('a prefab pointing at an unknown guid is reported, unless the package allow
     await fs.outputFile(path.join(dir, '.cmpose/package-guids.txt'), `# package assets\n${unknown}\n`);
     assert.deepEqual(await verifyGameProject(dir), []);
 });
+
+test('every whole-line extension marker (name:start / name:end) stays; flag markers and other names are reported', async (t) => {
+    const dir = await generated(t);
+    await fs.outputFile(path.join(dir, `${P}/App/Boot/BootInstaller.cs`), [
+        'namespace Acme.SkyHopper.App.Boot', '{', '    public sealed class BootInstaller', '    {', '        void Install()', '        {',
+        '            // cmpose:boot-steps:start', '            // cmpose:boot-steps:end', '        }', '    }', '}', ''
+    ].join('\n'));
+    await fs.outputFile(path.join(dir, `${P}/App/Boot/BootInstaller.cs.meta`), meta('b8'.repeat(16)));
+    await fs.outputFile(path.join(dir, `${P}/App/Boot.meta`), `fileFormatVersion: 2\nguid: ${'b9'.repeat(16)}\nfolderAsset: yes\n`);
+    assert.deepEqual(await verifyGameProject(dir), []);
+
+    await fs.appendFile(path.join(dir, `${P}/App/Boot/BootInstaller.cs`), '// cmpose:ads\n');
+    await fs.appendFile(path.join(dir, `${P}/Core/Ads/AdsConfig.cs`), '// /cmpose:ads\n');
+    await fs.appendFile(path.join(dir, `${P}/App/Game/GameInstaller.cs`), '    // cmpose:features:middle\n');
+    assert.deepEqual(await verifyGameProject(dir), [
+        'marker // /cmpose: in Assets/_Project/Core/Ads/AdsConfig.cs',
+        'marker // cmpose: in Assets/_Project/App/Boot/BootInstaller.cs',
+        'marker // cmpose: in Assets/_Project/App/Game/GameInstaller.cs'
+    ]);
+});
+
+test('a marker in a folder whose name holds " in " is read from the right file', async (t) => {
+    const dir = await generated(t);
+    const folder = `${P}/Fun in Space`;
+    await fs.outputFile(`${path.join(dir, folder)}.meta`, `fileFormatVersion: 2\nguid: ${'ba'.repeat(16)}\nfolderAsset: yes\n`);
+    await fs.outputFile(path.join(dir, folder, 'Rocket.cs'), '// cmpose:launch:start\n// cmpose:launch:end\n');
+    await fs.outputFile(path.join(dir, folder, 'Rocket.cs.meta'), meta('bb'.repeat(16)));
+    assert.deepEqual(await verifyGameProject(dir), []);
+    await fs.appendFile(path.join(dir, folder, 'Rocket.cs'), '// cmpose:ads\n');
+    assert.deepEqual(await verifyGameProject(dir), ['marker // cmpose: in Assets/_Project/Fun in Space/Rocket.cs']);
+});
