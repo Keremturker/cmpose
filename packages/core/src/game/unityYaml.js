@@ -143,11 +143,29 @@ function getMapEntry(text, mapKey, subKey, { doc } = {}) {
     return value;
 }
 
-// The sub-keys of a block map, in file order ([] for an empty map)
+// The keys of an inline map of plain scalars ('{a: 1, b: 2}'); anything nested or quoted is refused
+function inlineMapKeys(inline, mapKey) {
+    const inner = inline.slice(1, -1).trim();
+    if (!inner) return [];
+    const refuse = () => new UnityYamlError(`${mapKey}: inline map '${inline}' is not supported`, { key: mapKey });
+    if (/[{}[\]"']/.test(inner)) throw refuse();
+    return inner.split(',').map((part) => {
+        const m = /^([^\s:][^:]*):(?:[ \t]|$)/.exec(part.trim());
+        if (!m) throw refuse();
+        return m[1].trim();
+    });
+}
+
+// The sub-keys of a map, block or inline, in file order ([] for an empty map)
 function getMapKeys(text, mapKey, { doc } = {}) {
     let keys = [];
     withScope(text, doc, (segment) => {
         const lines = splitLines(segment);
+        const inline = valueOf(lines[onlyOne(topLevelIndexes(lines, mapKey), mapKey)], mapKey);
+        if (inline.startsWith('{') && inline.endsWith('}')) {
+            keys = inlineMapKeys(inline, mapKey);
+            return segment;
+        }
         const { header, end } = locateMap(lines, mapKey);
         keys = [];
         for (let i = header + 1; i < end; i++) {

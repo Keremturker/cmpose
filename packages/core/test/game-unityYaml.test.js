@@ -86,3 +86,11 @@ test('getMapKeys lists a block map\'s sub-keys in order, [] for an empty map', (
     assert.deepEqual(getMapKeys(text, 'applicationIdentifier', { doc: { classId: 129 } }), ['Android', 'Standalone']);
     assert.deepEqual(getMapKeys(text, 'other'), []);
 });
+
+test('getMapKeys reads an inline map too (an inline applicationIdentifier)', () => {
+    const { getMapKeys } = require('../src/game/unityYaml');
+    const text = '--- !u!129 &1\nPlayerSettings:\n  applicationIdentifier: {Android: a.b.c, Standalone: a.b.c, iPhone: a.b.c}\n  other: { }\n';
+    assert.deepEqual(getMapKeys(text, 'applicationIdentifier', { doc: { classId: 129 } }), ['Android', 'Standalone', 'iPhone']);
+    assert.deepEqual(getMapKeys(text, 'other'), []);
+    assert.throws(() => getMapKeys('  m: {a: {b: 1}}\n', 'm'), UnityYamlError);
+});
