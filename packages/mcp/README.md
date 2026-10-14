@@ -73,23 +73,27 @@ saving, deep links, and in-app review and update check.
   A group you leave out keeps the test IDs / placeholders and is reported as a warning.
 - **CI:** an optional GitHub Actions workflow with GameCI.
 - **Your names everywhere:** package (application identifier), company name, app name, min SDK
-  (25+) and iOS deployment target (15.0+).
+  (25 to 36) and iOS deployment target (15.0 to 26.2).
 
 ## Tools
 
 - `cmp_describe`: the defaults, the options and the rules (name formats, limits, which option
   needs which). Agents call it first.
-- `cmp_generate`: creates the project. Required: `projectName` (letters only), `appName`,
-  `packageName` (e.g. `com.acme.habits`) and an absolute `outputDir`. Optional:
-  `templateType`, `features`, `featuresConfig`, `minSdk`, `iosVersion`, `ci`, `templateRef`.
+- `cmp_generate`: creates the project. Required: `projectName` (letters only, up to 30),
+  `appName` (up to 30 characters), `packageName` (e.g. `com.acme.habits`, up to 50 characters)
+  and an absolute `outputDir`. Optional: `templateType`, `features` (module names up to 20),
+  `featuresConfig`, `minSdk` (24 to 36), `iosVersion` (15.0 to 26.2), `ci`, `templateRef`.
   It returns the project path, the template version it used, warnings (e.g. test ad IDs to
   replace) and next steps.
 - `game_describe`: the Unity game generator's engine and editor version, template types,
   renders, flags and their dependencies, ID groups, defaults and limits. Agents call it first.
-- `game_generate`: creates the game. Required: `projectName` (letters or digits, starting with
-  a letter), `appName`, `packageName` (e.g. `com.acme.skyhopper`) and an absolute `outputDir`.
-  Optional: `companyName`, `templateType`, `render`, `flags`, `features`, `minSdk`,
-  `iosVersion`, `ci`, `ids`, `templateRef`. It never overwrites a non-empty folder.
+- `game_generate`: creates the game. Required: `projectName` (1 to 30 letters or digits,
+  starting with a letter), `appName` (up to 30 characters), `packageName` (e.g.
+  `com.acme.skyhopper`, at least 3 segments, up to 50 characters) and an absolute `outputDir`.
+  Optional: `companyName` (like `projectName`; by default the package's second segment,
+  capitalized), `templateType`, `render`, `flags`, `features` (module names: 1 to 20 lowercase
+  letters or digits), `minSdk` (25 to 36), `iosVersion` (15.0 to 26.2, written as `major.minor`),
+  `ci`, `ids`, `templateRef`. It never overwrites a non-empty folder.
 
 ## How it works
 
