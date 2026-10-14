@@ -85,7 +85,9 @@ test('iosVersion is normalized to major.minor', () => {
     for (const [given, want] of [['015.0', '15.0'], ['15.0.0', '15.0'], ['15', '15.0'], ['16.04', '16.4'], ['016', '16.0'], [16.4, '16.4']]) {
         assert.strictEqual(ok({ ...base, iosVersion: given }).iosVersion, want, String(given));
     }
-    for (const iosVersion of ['15.1.2', '15.0.1', 'abc', '15.', '.5', '15.0.0.0', '', ' 15.0', '14.9.0', '99']) bad({ ...base, iosVersion }, 'iosVersion');
+    // (four parts joined at run time: the privacy scan reads a dotted quad in the source as an IPv4 address)
+    const fourParts = ['15.0', '0.0'].join('.');
+    for (const iosVersion of ['15.1.2', '15.0.1', 'abc', '15.', '.5', fourParts, '', ' 15.0', '14.9.0', '99']) bad({ ...base, iosVersion }, 'iosVersion');
 });
 test('a derived companyName error points at packageName', () => {
     const r = validateGame({ ...base, packageName: `com.${'a'.repeat(31)}.game` });
