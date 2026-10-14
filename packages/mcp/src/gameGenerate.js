@@ -44,6 +44,7 @@ async function runGameGenerate(args, { cacheDir, remoteUrl, onProgress = () => {
         onProgress('Generating the project');
         await fs.copy(cache.dir, work);
         const source = { repo: core.pins.game.repo, ref: cache.ref, commit: cache.commit };
+        // Called through core.game at call time (never destructured): the tests replace it to fail mid-generation
         const summary = await core.game.generateGame(value, {
             projectDir: work, template: source, coreVersion: core.version, generatorVersion, ...(now ? { now } : {})
         });

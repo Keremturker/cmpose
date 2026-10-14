@@ -12,9 +12,10 @@ const { createServer } = require('../src/server');
 const { seedGameTemplate } = require('../../core/test/support/seedGameTemplate');
 
 // A local git repository holding the game seed template at the pinned tag; cloned by its directory path
-async function makeGameTemplateRepo(tag = core.pins.game.ref) {
+async function makeGameTemplateRepo(tag = core.pins.game.ref, { edit = async () => { } } = {}) {
     const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'cmpose-game-repo-'));
     await seedGameTemplate(dir, { full: true });
+    await edit(dir);
     const git = (...args) => execFileSync('git', ['-C', dir, ...args], { encoding: 'utf8' }).trim();
     git('init', '-q', '-b', 'main');
     git('-c', 'user.name=t', '-c', 'user.email=t@t', 'add', '-A');
@@ -33,8 +34,8 @@ async function connect(options) {
     return { client, close: () => client.close() };
 }
 
-async function setup({ remoteUrl } = {}) {
-    const remote = remoteUrl ? null : await makeGameTemplateRepo();
+async function setup({ remoteUrl, edit } = {}) {
+    const remote = remoteUrl ? null : await makeGameTemplateRepo(undefined, { edit });
     const cacheDir = await fs.mkdtemp(path.join(os.tmpdir(), 'cmpose-game-cache-'));
     const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), 'cmpose-game-out-'));
     const conn = await connect({ cacheDir, remoteUrl: remoteUrl || remote.url });
@@ -122,7 +123,7 @@ test('a relative outputDir is refused', async () => {
     await close();
 });
 
-test('cleans up after a failed generation', async () => {
+test('a template that cannot be fetched leaves nothing behind', async () => {
     const missing = path.join(os.tmpdir(), `cmpose-missing-${process.pid}-${Date.now()}`);
     const { client, outputDir, cleanup } = await setup({ remoteUrl: missing });
     const r = await generate(client, { outputDir });
@@ -132,8 +133,25 @@ test('cleans up after a failed generation', async () => {
     await cleanup();
 });
 
+test('cleans up after a failed generation', async () => {
+    // A template whose GameInstaller lost its features markers: the copy is made, then module cloning fails
+    const edit = async (dir) => {
+        const file = path.join(dir, 'Assets/_Project/App/Game/GameInstaller.cs');
+        await fs.writeFile(file, (await fs.readFile(file, 'utf8')).replace(/^.*cmpose:features:end.*\n/m, ''));
+    };
+    const { client, outputDir, cleanup } = await setup({ edit });
+    const r = await generate(client, { outputDir, templateType: 'blank', features: ['shop'] });
+    assert.strictEqual(r.isError, true);
+    assert.match(r.content[0].text, /^Generation failed: module shop: .*cmpose:features:end/);
+    assert.deepStrictEqual(await leftovers(outputDir), []);
+    assert.strictEqual(await fs.pathExists(path.join(outputDir, 'SkyHopper')), false);
+    await cleanup();
+});
+
 test('a failure after the copy removes the working directory', async () => {
     const { client, outputDir, cleanup } = await setup();
+    // Works only because runGameGenerate calls core.game.generateGame through the object property at call time
+    // (not a destructured or cached reference): the replacement here is what it sees
     const original = core.game.generateGame;
     core.game.generateGame = async () => { throw new Error('boom'); };
     let r;
@@ -146,5 +164,28 @@ test('a failure after the copy removes the working directory', async () => {
     assert.match(r.content[0].text, /boom/);
     assert.deepStrictEqual(await leftovers(outputDir), []);
     assert.strictEqual(await fs.pathExists(path.join(outputDir, 'SkyHopper')), false);
+    await cleanup();
+});
+
+test('a target filled while generating is not overwritten', async () => {
+    const { client, outputDir, cleanup } = await setup();
+    const target = path.join(outputDir, 'SkyHopper');
+    // Through the object property, as above: another process claims the target while the project is generated
+    const original = core.game.generateGame;
+    core.game.generateGame = async (...args) => {
+        const summary = await original(...args);
+        await fs.outputFile(path.join(target, 'theirs.txt'), 'theirs');
+        return summary;
+    };
+    let r;
+    try {
+        r = await generate(client, { outputDir });
+    } finally {
+        core.game.generateGame = original;
+    }
+    assert.strictEqual(r.isError, true);
+    assert.match(r.content[0].text, /^Generation failed: .*not empty/);
+    assert.deepStrictEqual(await fs.readdir(target), ['theirs.txt']);
+    assert.deepStrictEqual(await leftovers(outputDir), []);
     await cleanup();
 });
