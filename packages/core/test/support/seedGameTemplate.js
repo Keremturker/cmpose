@@ -281,12 +281,17 @@ async function seedGameTemplate(dir, { full = false } = {}) {
         asmdef('Kturker.UnityBase.Features.Sample.Installer', ['Kturker.UnityBase.Features.Sample.Ads', 'VContainer']));
     await folder(`${S}/Ads`, GUIDS.ads);
     await asset(`${S}/Ads/SampleAdsPresenter.cs`, GUIDS.adsPresenter, ns('Kturker.UnityBase.Features.Sample.Ads',
-        '    public sealed class SampleAdsPresenter { }\n'));
+        ['    public sealed class SampleAdsPresenter',
+            '    {',
+            '        public const string TitleKey = "sample.title";',
+            '        private readonly ISampleView sample;',
+            '        public void Start() => sample.CompleteClicked += OnComplete;',
+            '    }', ''].join('\n')));
     await asset(`${S}/Ads/BonusView.cs`, GUIDS.bonusView, ns('Kturker.UnityBase.Features.Sample.Ads',
         '    public sealed class BonusView : UnityEngine.MonoBehaviour { }\n'));
     await asset(`${S}/Ads/Bonus.prefab`, GUIDS.bonusPrefab, [
         '%YAML 1.1', '%TAG !u! tag:unity3d.com,2011:', '--- !u!1 &100', 'GameObject:', '  m_Name: Bonus',
-        '--- !u!114 &200', 'MonoBehaviour:', `  m_Script: {fileID: 11500000, guid: ${GUIDS.bonusView}, type: 3}`, ''
+        '--- !u!114 &200', 'MonoBehaviour:', `  m_Script: {fileID: 11500000, guid: ${GUIDS.bonusView}, type: 3}`, '  key: sample.back', ''
     ].join('\n'));
     await asset(`${S}/Ads/Kturker.UnityBase.Features.Sample.Ads.asmdef`, GUIDS.adsAsmdef,
         asmdef('Kturker.UnityBase.Features.Sample.Ads', ['Kturker.UnityBase.Core.Ads']));

@@ -22,6 +22,17 @@ test('clones Sample with new guids, renamed names, keys and string files', async
     assert.notStrictEqual(newGuid, oldGuid);
 });
 
+test('renames only the Sample localization keys, not C# members named sample', async () => {
+    const d = await project();
+    await cloneModules(d, ['shop'], { seed: 's' });
+    const cs = await read(d, 'Assets/_Project/Features/Shop/Ads/ShopAdsPresenter.cs');
+    assert.match(cs, /"shop\.title"/);
+    assert.match(cs, /private readonly IShopView sample;/);
+    assert.match(cs, / sample\.CompleteClicked \+= OnComplete;/);
+    assert.ok(!cs.includes('shop.CompleteClicked'));
+    assert.match(await read(d, 'Assets/_Project/Features/Shop/Ads/Bonus.prefab'), /^ {2}key: shop\.back$/m);
+});
+
 test('wires the installer, its using line and the App asmdef reference', async () => {
     const d = await project();
     await cloneModules(d, ['shop', 'quests'], { seed: 's' });
