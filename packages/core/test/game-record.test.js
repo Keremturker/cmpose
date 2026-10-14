@@ -50,3 +50,13 @@ test('writeGameRecord writes .cmpose/generation.json as 2-space JSON with a trai
     const text = await fs.readFile(path.join(dir, '.cmpose', 'generation.json'), 'utf8');
     assert.equal(text, `${JSON.stringify(record, null, 2)}\n`);
 });
+
+test('buildGameRecord does not assume a validated value', () => {
+    for (const odd of [{}, { flags: 'ads', features: null }, { flags: ['ads', 5], features: [null, 'shop'] }]) {
+        const record = buildGameRecord({ template: TEMPLATE, coreVersion: '0.2.0', value: { ...VALUE, ...odd, flags: odd.flags, features: odd.features }, now: NOW });
+        assert.ok(Array.isArray(record.flags) && record.flags.every((f) => typeof f === 'string'));
+        assert.ok(Array.isArray(record.features) && record.features.every((f) => typeof f === 'string'));
+        assert.equal(record.ids.admob, record.flags.includes('ads') ? 'custom' : 'off');
+    }
+    assert.deepEqual(buildGameRecord({ template: TEMPLATE, coreVersion: '0.2.0', value: { ...VALUE, flags: ['ads', 5], features: [null, 'shop'] }, now: NOW }).features, ['shop']);
+});

@@ -16,9 +16,13 @@ function idStatuses(flags, ids) {
     return out;
 }
 
+// The value is meant to come from validateGame, but the record never assumes it: odd entries are dropped
+const strings = (list) => (Array.isArray(list) ? list.filter((x) => typeof x === 'string') : []);
+
 /** The .cmpose/generation.json content of a generated Unity game (no personal data, no ID values);
  * generatorVersion names the caller (e.g. mcp@0.2.0), null when not given */
 function buildGameRecord({ template, coreVersion, generatorVersion = null, value, now = new Date() }) {
+    const flags = strings(value.flags);
     return {
         generator: '@cmpose/core',
         coreVersion,
@@ -27,12 +31,12 @@ function buildGameRecord({ template, coreVersion, generatorVersion = null, value
         unityVersion: GAME_SCHEMA.unityVersion,
         templateType: value.templateType,
         render: value.render,
-        flags: value.flags.slice(),
-        features: value.features.slice(),
+        flags,
+        features: strings(value.features),
         ci: value.ci === true,
         minSdk: value.minSdk,
         iosVersion: value.iosVersion,
-        ids: idStatuses(value.flags, value.ids),
+        ids: idStatuses(flags, value.ids),
         template: { repo: template.repo, ref: template.ref, commit: template.commit },
         generatedAt: now.toISOString()
     };
