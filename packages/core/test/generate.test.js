@@ -22,7 +22,7 @@ test('generates a showcase project in place and reports what it did', async () =
     assert.strictEqual(summary.templateCommit, 'a'.repeat(40));
     assert.strictEqual(summary.templateRef, 'refs/tags/template-test');
     assert.strictEqual(summary.warnings.length, 2);
-    for (const leftover of ['.git', '.idea', 'local.properties', '.template-commit', '.template-ref', 'Multiplatform.iml']) {
+    for (const leftover of ['.git', '.idea', 'local.properties', '.template-commit', '.template-ref', 'Multiplatform.iml', 'LICENSE']) {
         assert.strictEqual(await fs.pathExists(path.join(projectDir, leftover)), false, leftover);
     }
     const record = await fs.readJson(path.join(projectDir, '.cmpose', 'generation.json'));

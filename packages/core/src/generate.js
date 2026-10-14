@@ -35,8 +35,9 @@ async function generateCmpProject(value, { projectDir, generatorVersion = null }
     const templateRef = await readMarker(REF_FILE_NAME);
     const templateCommit = await readMarker(COMMIT_FILE_NAME);
 
-    // The cache's own records and IDE state never reach the project
-    for (const leftover of ['.git', '.idea', 'local.properties', COMMIT_FILE_NAME, REF_FILE_NAME]) {
+    // The cache's own records and IDE state never reach the project, nor does the template's own
+    // licence: the generated project is the user's, to license as they choose
+    for (const leftover of ['.git', '.idea', 'local.properties', 'LICENSE', COMMIT_FILE_NAME, REF_FILE_NAME]) {
         await fs.remove(path.join(projectDir, leftover));
     }
     await cleanImlFiles(projectDir);

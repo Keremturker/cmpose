@@ -17,6 +17,7 @@ async function seedTemplate(dir, { commit = 'f'.repeat(40), ref = 'refs/tags/tem
         'local.properties': 'sdk.dir=/home/dev/Android/sdk\n',
         '.idea/workspace.xml': '<project version="4" />\n',
         'Multiplatform.iml': '<module type="JAVA_MODULE" version="4" />\n',
+        'LICENSE': 'MIT License\n\nCopyright (c) 2026 cmpose contributors\n',
         'settings.gradle.kts': `rootProject.name = "${OLD_PROJECT_NAME}"\ninclude(":composeApp")\n`,
         'build.gradle.kts': 'plugins { }\n',
         'gradle/libs.versions.toml': '[versions]\nandroid-minSdk = "24"\n',
