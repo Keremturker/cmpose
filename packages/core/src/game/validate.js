@@ -9,21 +9,39 @@ const KOTLIN_KEYWORDS = PV.KOTLIN_HARD_KEYWORDS;
 const NAME_RE = /^[A-Za-z][A-Za-z0-9]{0,29}$/;
 const PACKAGE_RE = /^[a-z][a-z0-9]*(\.[a-z][a-z0-9]*){2,}$/;
 const MODULE_RE = /^[a-z][a-z0-9]{0,19}$/;
-const IOS_VERSION_RE = /^\d+(\.\d+){1,2}$/;
+// 'M', 'M.m' or 'M.m.0' (leading zeros allowed); normalized to 'M.m'
+const IOS_VERSION_RE = /^(\d+)(?:\.(\d+)(?:\.(0+))?)?$/;
 
+// Each ID's pattern and the shape an error message names
+const ADMOB_APP = { re: /^ca-app-pub-\d{16}~\d{10}$/, shape: 'ca-app-pub-<16 digits>~<10 digits>' };
+const ADMOB_UNIT = { re: /^ca-app-pub-\d{16}\/\d{10}$/, shape: 'ca-app-pub-<16 digits>/<10 digits>' };
+const GPGS_ID = { re: /^[A-Za-z0-9_-]{4,64}$/, shape: '4-64 letters, digits, _ or -' };
+const GC_ID = { re: /^[A-Za-z0-9._-]{1,100}$/, shape: '1-100 letters, digits, ., _ or -' };
 const ID_FORMATS = {
     admob: {
-        androidAppId: /^ca-app-pub-\d{16}~\d{10}$/, iosAppId: /^ca-app-pub-\d{16}~\d{10}$/,
-        androidBanner: /^ca-app-pub-\d{16}\/\d{10}$/, androidInterstitial: /^ca-app-pub-\d{16}\/\d{10}$/, androidRewarded: /^ca-app-pub-\d{16}\/\d{10}$/,
-        iosBanner: /^ca-app-pub-\d{16}\/\d{10}$/, iosInterstitial: /^ca-app-pub-\d{16}\/\d{10}$/, iosRewarded: /^ca-app-pub-\d{16}\/\d{10}$/
+        androidAppId: ADMOB_APP, iosAppId: ADMOB_APP,
+        androidBanner: ADMOB_UNIT, androidInterstitial: ADMOB_UNIT, androidRewarded: ADMOB_UNIT,
+        iosBanner: ADMOB_UNIT, iosInterstitial: ADMOB_UNIT, iosRewarded: ADMOB_UNIT
     },
-    revenueCat: { appleApiKey: /^appl_[A-Za-z0-9]{20,}$/, googleApiKey: /^goog_[A-Za-z0-9]{20,}$/ },
+    revenueCat: {
+        appleApiKey: { re: /^appl_[A-Za-z0-9]{20,}$/, shape: 'appl_ followed by at least 20 letters or digits' },
+        googleApiKey: { re: /^goog_[A-Za-z0-9]{20,}$/, shape: 'goog_ followed by at least 20 letters or digits' }
+    },
     gameServices: {
-        androidAppId: /^\d{6,20}$/,
-        leaderboardAndroid: /^[A-Za-z0-9_-]{4,64}$/, firstCompletionAndroid: /^[A-Za-z0-9_-]{4,64}$/, tenCompletionsAndroid: /^[A-Za-z0-9_-]{4,64}$/,
-        leaderboardIos: /^[A-Za-z0-9._-]{1,100}$/, firstCompletionIos: /^[A-Za-z0-9._-]{1,100}$/, tenCompletionsIos: /^[A-Za-z0-9._-]{1,100}$/
+        androidAppId: { re: /^\d{6,20}$/, shape: '6-20 digits' },
+        leaderboardAndroid: GPGS_ID, firstCompletionAndroid: GPGS_ID, tenCompletionsAndroid: GPGS_ID,
+        leaderboardIos: GC_ID, firstCompletionIos: GC_ID, tenCompletionsIos: GC_ID
     }
 };
+
+// Why an ID value is rejected (null = valid). The value is written into C#, XML and YAML lines.
+function idProblem(group, field, v) {
+    if (typeof v !== 'string') return 'must be a string';
+    if (/["\\$\r\n]/.test(v)) return 'must not contain ", \\, $ or a line break';
+    if (/replace_me/i.test(v)) return 'is a placeholder (REPLACE_ME): use your real ID';
+    const { re, shape } = ID_FORMATS[group][field];
+    return re.test(v) ? null : `must look like ${shape}`;
+}
 
 const fail = (error) => ({ ok: false, error });
 const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
@@ -38,6 +56,11 @@ function checkName(field, value) {
 
 function parseIosVersion(v) {
     return String(v).split('.').map(Number);
+}
+// '015.0' / '15.0.0' / '15' -> '15.0'; null when not a version this accepts
+function normalizeIosVersion(v) {
+    const m = typeof v === 'string' ? IOS_VERSION_RE.exec(v) : null;
+    return m ? `${Number(m[1])}.${Number(m[2] || 0)}` : null;
 }
 function cmpVersion(a, b) {
     for (let i = 0; i < Math.max(a.length, b.length); i++) {
@@ -55,16 +78,16 @@ function validateIds(ids, flags) {
         if (!def) return { error: `ids.${group} is not a known group (${Object.keys(S.idGroups).join(', ')})` };
         const g = ids[group];
         if (!isObject(g)) return { error: `ids.${group} must be an object` };
-        const missing = def.fields.filter((f) => !(f in g));
+        const missing = def.fields.filter((f) => !Object.hasOwn(g, f));
+        if (missing.length) return { error: `ids.${group} is missing: ${missing.join(', ')}` };
         const extra = Object.keys(g).filter((f) => !def.fields.includes(f));
-        if (missing.length || extra.length) return { error: `ids.${group} needs all of: ${def.fields.join(', ')}` };
+        if (extra.length) return { error: `ids.${group} has unknown fields: ${extra.join(', ')} (known: ${def.fields.join(', ')})` };
         if (!flags.includes(def.flag)) return { error: `ids.${group} needs the ${def.flag} flag` };
         out[group] = {};
         for (const f of def.fields) {
-            const v = g[f];
-            const path = `ids.${group}.${f}`;
-            if (typeof v !== 'string' || /["\\$\r\n]/.test(v) || /replace_me/i.test(v) || !ID_FORMATS[group][f].test(v)) return { error: `${path} has an invalid format` };
-            out[group][f] = v;
+            const problem = idProblem(group, f, g[f]);
+            if (problem) return { error: `ids.${group}.${f} ${problem}` };
+            out[group][f] = g[f];
         }
     }
     return { value: out };
@@ -86,9 +109,11 @@ function validateGame(input) {
     if (segments.some((s) => inList(CSHARP_KEYWORDS, s, true) || inList(KOTLIN_KEYWORDS, s, true))) return fail('packageName must not contain a keyword segment');
     if (packageName === S.reservedPackagePrefix || packageName.startsWith(S.reservedPackagePrefix + '.')) return fail('packageName must not use the reserved com.kturker prefix');
 
-    const companyName = input.companyName === undefined ? segments[1][0].toUpperCase() + segments[1].slice(1) : input.companyName;
+    // Without companyName it comes from packageName's second segment: an error then points at packageName
+    const derived = input.companyName === undefined;
+    const companyName = derived ? segments[1][0].toUpperCase() + segments[1].slice(1) : input.companyName;
     err = checkName('companyName', companyName);
-    if (err) return fail(err);
+    if (err) return fail(derived ? `${err} (companyName "${companyName}" is derived from packageName's second segment: shorten it there or set companyName)` : err);
 
     const templateType = input.templateType === undefined ? 'showcase' : input.templateType;
     if (!S.templateTypes.includes(templateType)) return fail(`templateType must be one of: ${S.templateTypes.join(', ')}`);
@@ -133,8 +158,9 @@ function validateGame(input) {
     let iosVersion = S.limits.iosVersionMin;
     if (input.iosVersion !== undefined) {
         let v = input.iosVersion;
-        if (typeof v === 'number' && Number.isFinite(v)) v = Number.isInteger(v) ? `${v}.0` : String(v);
-        if (typeof v !== 'string' || !IOS_VERSION_RE.test(v)
+        if (typeof v === 'number' && Number.isFinite(v)) v = String(v);
+        v = normalizeIosVersion(v);
+        if (v === null
             || cmpVersion(parseIosVersion(v), parseIosVersion(S.limits.iosVersionMin)) < 0
             || cmpVersion(parseIosVersion(v), parseIosVersion(limits.iosVersionMax)) > 0) {
             return fail(`iosVersion must be from ${S.limits.iosVersionMin} to ${limits.iosVersionMax}`);

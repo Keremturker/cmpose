@@ -81,3 +81,39 @@ test('module names whose copy would clash with the template are reserved', () =>
     for (const name of reserved) assert.ok(describeGame().contract.reservedModuleNames.includes(name), name);
     ok({ ...b, features: ['app', 'core', 'save'] });
 });
+test('iosVersion is normalized to major.minor', () => {
+    for (const [given, want] of [['015.0', '15.0'], ['15.0.0', '15.0'], ['15', '15.0'], ['16.04', '16.4'], ['016', '16.0'], [16.4, '16.4']]) {
+        assert.strictEqual(ok({ ...base, iosVersion: given }).iosVersion, want, String(given));
+    }
+    for (const iosVersion of ['15.1.2', '15.0.1', 'abc', '15.', '.5', '15.0.0.0', '', ' 15.0', '14.9.0', '99']) bad({ ...base, iosVersion }, 'iosVersion');
+});
+test('a derived companyName error points at packageName', () => {
+    const r = validateGame({ ...base, packageName: `com.${'a'.repeat(31)}.game` });
+    assert.strictEqual(r.ok, false);
+    assert.match(r.error, /derived from packageName/);
+    assert.match(r.error, /companyName/);
+});
+test('ids: missing and unknown fields are reported separately', () => {
+    const b = { ...base, templateType: 'blank', flags: ['ads'] };
+    const { iosRewarded, iosBanner, ...partial } = ADMOB;
+    let r = validateGame({ ...b, ids: { admob: { ...partial, extra: 'x' } } });
+    assert.match(r.error, /ids\.admob is missing: iosBanner, iosRewarded$/);
+    r = validateGame({ ...b, ids: { admob: { ...ADMOB, extra: 'x', other: 'y' } } });
+    assert.match(r.error, /^ids\.admob has unknown fields: extra, other \(known: /);
+});
+test('id errors say what is wrong', () => {
+    const b = { ...base, templateType: 'blank', flags: ['ads', 'purchases'] };
+    const msg = (ids) => validateGame({ ...b, ids }).error;
+    assert.match(msg({ admob: { ...ADMOB, androidBanner: 'ca-app-pub-1/2' } }), /^ids\.admob\.androidBanner must look like ca-app-pub-<16 digits>\/<10 digits>/);
+    assert.match(msg({ admob: { ...ADMOB, iosAppId: 'x' } }), /^ids\.admob\.iosAppId must look like ca-app-pub-<16 digits>~<10 digits>/);
+    assert.match(msg({ admob: { ...ADMOB, iosAppId: 5 } }), /^ids\.admob\.iosAppId must be a string/);
+    assert.match(msg({ admob: { ...ADMOB, iosAppId: 'a"b' } }), /^ids\.admob\.iosAppId must not contain/);
+    assert.match(msg({ admob: { ...ADMOB, iosAppId: 'REPLACE_ME' } }), /^ids\.admob\.iosAppId is a placeholder/);
+    assert.match(msg({ revenueCat: { appleApiKey: 'appl_x', googleApiKey: 'goog_' + 'b'.repeat(24) } }), /^ids\.revenueCat\.appleApiKey must look like appl_/);
+});
+test('wrongly typed ids, ci and flags are rejected with a clear message', () => {
+    const b = { ...base, templateType: 'blank' };
+    for (const ids of ['x', [], 5, null]) assert.strictEqual(validateGame({ ...b, ids }).error, 'ids must be an object');
+    for (const ci of ['true', 1, null]) assert.strictEqual(validateGame({ ...base, ci }).error, 'ci must be a boolean');
+    for (const flags of ['ads', { ads: true }, null]) assert.match(validateGame({ ...b, flags }).error, /^flags must be an array of: /);
+});
