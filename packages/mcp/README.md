@@ -92,8 +92,8 @@ saving, deep links, and in-app review and update check.
   `com.acme.skyhopper`, at least 3 segments, up to 50 characters) and an absolute `outputDir`.
   Optional: `companyName` (like `projectName`; by default the package's second segment,
   capitalized), `templateType`, `render`, `flags`, `features` (module names: 1 to 20 lowercase
-  letters or digits), `minSdk` (25 to 36), `iosVersion` (15.0 to 26.2, written as `major.minor`),
-  `ci`, `ids`, `templateRef`. It never overwrites a non-empty folder.
+  letters or digits, starting with a letter), `minSdk` (25 to 36), `iosVersion` (15.0 to 26.2,
+  written as `major.minor`), `ci`, `ids`, `templateRef`. It never overwrites a non-empty folder.
 
 ## How it works
 
