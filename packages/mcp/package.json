@@ -2,7 +2,7 @@
   "name": "@cmpose/mcp",
   "version": "0.2.0",
   "mcpName": "io.github.Keremturker/cmpose",
-  "description": "MCP server that generates buildable Compose Multiplatform (Android + iOS) projects locally from any AI agent",
+  "description": "MCP server that generates buildable Compose Multiplatform (Android + iOS) projects and Unity game projects locally from any AI agent",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -24,6 +24,8 @@
     "android",
     "ios",
     "compose",
+    "unity",
+    "game",
     "ai-agent",
     "mcp-server"
   ],
