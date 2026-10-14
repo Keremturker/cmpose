@@ -122,3 +122,23 @@ test('the manifest and the App asmdef keep their own format', async (t) => {
     assert.ok(a.endsWith('}'));
     assert.ok(JSON.parse(a).references.includes('Kturker.UnityBase.Features.Shop.Installer'));
 });
+
+test('a one-line, a blank-first-line and a leading-newline manifest keep their shape', async (t) => {
+    const write = async (d, text) => fs.writeFile(path.join(d, '.cmpose/flags.json'), text);
+    const oneLine = await project(t);
+    await write(oneLine, `${JSON.stringify(JSON.parse(await read(oneLine, '.cmpose/flags.json')))}\n`);
+    await cloneModules(oneLine, ['shop'], { seed: 'x' });
+    const a = await read(oneLine, '.cmpose/flags.json');
+    assert.ok(a.endsWith('}\n') && !a.slice(0, -1).includes('\n'), a.slice(0, 80));
+
+    const leading = await project(t);
+    await write(leading, `\n${JSON.stringify(JSON.parse(await read(leading, '.cmpose/flags.json')), null, 4)}\n`);
+    await cloneModules(leading, ['shop'], { seed: 'x' });
+    assert.match(await read(leading, '.cmpose/flags.json'), /^\{\n {4}"flags": \{\n {8}"/);
+
+    const blankFirst = await project(t);
+    const text = JSON.stringify(JSON.parse(await read(blankFirst, '.cmpose/flags.json')), null, 4);
+    await write(blankFirst, `{\n\n${text.slice(2)}\n`);
+    await cloneModules(blankFirst, ['shop'], { seed: 'x' });
+    assert.match(await read(blankFirst, '.cmpose/flags.json'), /^\{\n {4}"flags": \{\n {8}"/);
+});

@@ -35,8 +35,10 @@ async function owningAsmdef(projectDir, rel) {
 // Writes value back as JSON in the original text's format: its indent (spaces or tab), line ending and final newline
 function sameFormatJson(original, value) {
     const eol = original.includes('\r\n') ? '\r\n' : '\n';
-    const indent = /^[{[]\r?\n([ \t]+)\S/.exec(original);
-    const body = JSON.stringify(value, null, indent ? indent[1] : (original.includes('\n') ? 2 : 0));
+    // A one-line file (however it ends) stays on one line; otherwise the first indented line gives the indent
+    const multiline = original.trim().includes('\n');
+    const indent = /\n([ \t]+)\S/.exec(original);
+    const body = JSON.stringify(value, null, !multiline ? 0 : (indent ? indent[1] : 2));
     return body.replace(/\n/g, eol) + (/\r?\n$/.test(original) ? eol : '');
 }
 
