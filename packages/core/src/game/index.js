@@ -1,5 +1,29 @@
 'use strict';
+const { validateGame } = require('./validate');
+const { GAME_SCHEMA, gameContractFacts, gameContractVersion } = require('./contract');
+const { generateGame } = require('./generate');
+const { describeGame } = require('./describe');
+const { cloneModules } = require('./modules');
+const { applyGameIdentity } = require('./identity');
+const { writeGameIds } = require('./ids');
+const { applyGameReadme } = require('./readme');
+const { buildGameRecord, writeGameRecord } = require('./record');
+const { verifyGameProject } = require('./verifier');
+
 module.exports = {
+    validateGame,
+    generateGame,
+    describeGame,
+    GAME_SCHEMA,
+    gameContractFacts,
+    gameContractVersion,
+    cloneModules,
+    applyGameIdentity,
+    writeGameIds,
+    applyGameReadme,
+    buildGameRecord,
+    writeGameRecord,
+    verifyGameProject,
     flags: require('./flags'),
     guid: require('./guid'),
     guidIntegrity: require('./guidIntegrity'),

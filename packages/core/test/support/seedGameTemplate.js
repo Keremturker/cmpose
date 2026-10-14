@@ -13,7 +13,20 @@ const GUIDS = {
     ads: G('de'), adsPresenter: G('df'), bonusView: G('e0'), bonusPrefab: G('e1'), adsAsmdef: G('e2'),
     resources: G('e3'), strings: G('e4'), en: G('e5'), sampleJson: G('e6'),
     showcase: G('e7'), showcaseInstaller: G('e8'), showcaseInstallerCs: G('e9'), showcaseAsmdef: G('ea'),
-    scenes: G('eb'), menu: G('ec')
+    scenes: G('eb'), menu: G('ec'),
+    // full: the other public flags' folders and Google Mobile Ads' settings
+    gma: G('f0'), gmaResources: G('f1'), gmaSettings: G('f2')
+};
+
+// full: every public flag the contract knows, each with one Core folder holding one script
+const EXTRA_FLAGS = {
+    saveSystem: { define: 'CMPOSE_SAVESYSTEM', dir: 'Save', guid: G('f3'), cs: G('f4') },
+    uiTheme: { define: 'CMPOSE_UITHEME', dir: 'Theme', guid: G('f5'), cs: G('f6') },
+    multiLang: { define: 'CMPOSE_MULTILANG', dir: 'Language', guid: G('f7'), cs: G('f8') },
+    network: { define: 'CMPOSE_NETWORK', dir: 'Network', guid: G('f9'), cs: G('fa') },
+    networkInspector: { define: 'CMPOSE_NETWORKINSPECTOR', dir: 'NetworkInspector', guid: G('fb'), cs: G('fc'), requires: ['network'] },
+    purchases: { define: 'CMPOSE_PURCHASES', dir: 'Purchases', guid: G('fd'), cs: G('fe') },
+    leaderboards: { define: 'CMPOSE_LEADERBOARDS', dir: 'Leaderboards', guid: G('c2'), cs: G('c3') }
 };
 
 const meta = (guid, folder = false) => `fileFormatVersion: 2\nguid: ${guid}\n${folder ? 'folderAsset: yes\n' : ''}`;
@@ -202,16 +215,42 @@ const PACKAGES = {
 
 const ns = (namespace, body) => `namespace ${namespace}\n{\n${body}}\n`;
 
-async function seedGameTemplate(dir) {
+const GMA_SETTINGS = `%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_Name: GoogleMobileAdsSettings
+  adMobAndroidAppId: ca-app-pub-3940256099942544~3347511713
+  adMobIOSAppId: ca-app-pub-3940256099942544~1458002511
+`;
+
+// full: true adds what the whole game pipeline (generateGame) needs on top of the default miniature: every
+// public flag of the contract (with its define), Google Mobile Ads' settings asset under the ads flag, and a 2d
+// render overlay (the real template's shape: 3d upstream, 2d a layer). Without it the seed stays as it was.
+function fullFlags(flags) {
+    const out = JSON.parse(JSON.stringify(flags));
+    for (const [name, x] of Object.entries(EXTRA_FLAGS)) {
+        out.flags[name] = {
+            define: x.define, paths: [`Assets/_Project/Core/${x.dir}`], asmdefs: [`Kturker.UnityBase.Core.${x.dir}`], packages: [],
+            ...(x.requires ? { requires: x.requires } : {})
+        };
+    }
+    out.flags.ads.paths.push('Assets/GoogleMobileAds');
+    out.renders = { '3d': null, '2d': '.cmpose/layers/render-2d' };
+    return out;
+}
+
+async function seedGameTemplate(dir, { full = false } = {}) {
     const f = (rel, content) => fs.outputFile(path.join(dir, rel), content);
     const folder = (rel, guid) => f(`${rel}.meta`, meta(guid, true));
     const asset = async (rel, guid, content) => { await f(rel, content); await f(`${rel}.meta`, meta(guid)); };
     const P = 'Assets/_Project';
     const S = `${P}/Features/Sample`;
 
-    await f('ProjectSettings/ProjectSettings.asset', PROJECT_SETTINGS);
+    const defines = ['CMPOSE_ADS', 'CMPOSE_SAMPLE', 'CMPOSE_SHOWCASE', ...(full ? Object.values(EXTRA_FLAGS).map((x) => x.define) : [])].join(';');
+    await f('ProjectSettings/ProjectSettings.asset', PROJECT_SETTINGS.replace(/CMPOSE_ADS;CMPOSE_SAMPLE;CMPOSE_SHOWCASE/g, defines));
     await f('ProjectSettings/EditorBuildSettings.asset', EDITOR_BUILD_SETTINGS);
-    await f('.cmpose/flags.json', json(FLAGS, 2));
+    await f('.cmpose/flags.json', json(full ? fullFlags(FLAGS) : FLAGS, 2));
     await f('.cmpose/package-guids.txt', '');
     await f('Packages/manifest.json', json(PACKAGES, 2));
     await f('README.md', README);
@@ -267,6 +306,22 @@ async function seedGameTemplate(dir) {
     await asset(`${P}/Scenes/Menu.unity`, GUIDS.menu, [
         '%YAML 1.1', '%TAG !u! tag:unity3d.com,2011:', '--- !u!1 &1', 'GameObject:', '  m_Name: Menu', ''
     ].join('\n'));
+
+    if (full) {
+        for (const x of Object.values(EXTRA_FLAGS)) {
+            await folder(`${P}/Core/${x.dir}`, x.guid);
+            await asset(`${P}/Core/${x.dir}/${x.dir}Service.cs`, x.cs, ns(`Kturker.UnityBase.Core.${x.dir}`,
+                `    public sealed class ${x.dir}Service { }\n`));
+        }
+        await folder('Assets/GoogleMobileAds', GUIDS.gma);
+        await folder('Assets/GoogleMobileAds/Resources', GUIDS.gmaResources);
+        await asset('Assets/GoogleMobileAds/Resources/GoogleMobileAdsSettings.asset', GUIDS.gmaSettings, GMA_SETTINGS);
+        // The 2d layer replaces the menu scene, keeping its guid
+        await f('.cmpose/layers/render-2d/Assets/_Project/Scenes/Menu.unity', [
+            '%YAML 1.1', '%TAG !u! tag:unity3d.com,2011:', '--- !u!1 &1', 'GameObject:', '  m_Name: Menu2D', ''
+        ].join('\n'));
+        await f('.cmpose/layers/render-2d/Assets/_Project/Scenes/Menu.unity.meta', meta(GUIDS.menu));
+    }
     return dir;
 }
 

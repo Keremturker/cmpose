@@ -36,6 +36,7 @@ check 'private path' '' '/Users/|C:\\Users\\|(^|[[:space:]"'"'"'`=(])/(home|user
 # Case-insensitive; Turkish letters spelled out because LC_ALL=C folds ASCII only.
 # Allowlist (case-sensitive, exact):
 #   Keremturker/cmpose-template  the public template snapshots (pins.js, README); CmpTemplate its private source
+#   Keremturker/cmpose-game-template  the public Unity game template (pins.js game pin)
 #   Keremturker/cmpose       this repository (package.json repository/homepage/bugs);
 #                            any other Keremturker/<repo> is still reported
 #   com.kturker / com/kturker / com.kturker:  the template's own package and Maven group
@@ -44,7 +45,7 @@ check 'private path' '' '/Users/|C:\\Users\\|(^|[[:space:]"'"'"'`=(])/(home|user
 #   'kturker'                path segment of that package in a test (path.join('com', 'kturker'))
 #   Kturker                  the template's identifier as a whole word, standalone or as the
 #                            Kturker.UnityBase namespace prefix (Unity template); Keremturker, Turker, Kerem stay reported
-NAME_ALLOW='(^|[^A-Za-z0-9_])(Keremturker/(CmpTemplate|cmpose-template|cmpose)|com\\?[./:]kturker|'"'"'kturker'"'"'|Kturker)([^A-Za-z0-9_-]|$)'
+NAME_ALLOW='(^|[^A-Za-z0-9_])(Keremturker/(CmpTemplate|cmpose-template|cmpose-game-template|cmpose)|com\\?[./:]kturker|'"'"'kturker'"'"'|Kturker)([^A-Za-z0-9_-]|$)'
 check 'personal name' '-i' 'kerem|t(u|ü|Ü)rker' "$NAME_ALLOW"
 
 # IPv4 allowlist (addresses that can never point at a real server):
