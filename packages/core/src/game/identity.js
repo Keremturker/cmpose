@@ -1,20 +1,13 @@
 const path = require('path');
 const fs = require('fs-extra');
-const { escapeRe, getMapKeys, setMapEntry } = require('./unityYaml');
+const { getMapKeys, setMapEntry } = require('./unityYaml');
+const { renamer } = require('./guid');
 const { PLAYER, applyIdentity } = require('./projectSettings');
 
 const TEXT_EXTENSIONS = new Set(['.cs', '.asmdef', '.asmref', '.prefab', '.unity', '.asset', '.mat', '.json', '.md', '.txt',
     '.xml', '.ruleset', '.yml', '.uss', '.uxml']);
 const SKIPPED = new Set(['Library', 'Temp', 'Logs', 'UserSettings', '.git', '.cmpose']);
 const TEMPLATE_NAMESPACE = 'Kturker.UnityBase';
-
-// One pass, longest 'from' first, so a replacement is never replaced again
-function renamer(pairs) {
-    const sorted = [...pairs].sort((a, b) => b.from.length - a.from.length);
-    const lookup = new Map(sorted.map((p) => [p.from, p.to]));
-    const re = new RegExp(sorted.map((p) => escapeRe(p.from)).join('|'), 'g');
-    return (s) => s.replace(re, (m) => lookup.get(m));
-}
 
 // Every file and folder below dir outside the skipped top-level folders; folders are listed too
 async function walk(abs, rel, out) {
@@ -36,6 +29,21 @@ async function applyGameIdentity(projectDir, { companyName, projectName, appName
     const entries = [];
     await walk(projectDir, '', entries);
 
+    // Names, deepest first; a .meta carries the template namespace in its name too, so it follows its asset.
+    // Every target is checked before anything changes, so a collision leaves the project as it was.
+    const namePart = renamer([{ from: TEMPLATE_NAMESPACE, to: `${companyName}.${projectName}` }]);
+    const moves = entries.filter((e) => path.posix.basename(e.rel).includes(TEMPLATE_NAMESPACE))
+        .sort((a, b) => b.rel.split('/').length - a.rel.split('/').length)
+        .map((e) => {
+            const from = path.join(projectDir, e.rel);
+            return { rel: e.rel, from, to: path.join(path.dirname(from), namePart(path.basename(from))) };
+        });
+    const targets = new Set();
+    for (const m of moves) {
+        if (targets.has(m.to) || (await fs.pathExists(m.to))) throw new Error(`cannot rename ${m.rel}: target exists`);
+        targets.add(m.to);
+    }
+
     // 1. content
     for (const e of entries) {
         if (e.dir || !TEXT_EXTENSIONS.has(path.extname(e.rel))) continue;
@@ -45,18 +53,9 @@ async function applyGameIdentity(projectDir, { companyName, projectName, appName
         if (next !== text) await fs.writeFile(file, next);
     }
 
-    // 2. names, deepest first; a .meta carries the template namespace in its name too, so it follows its asset
-    const namePart = renamer([{ from: TEMPLATE_NAMESPACE, to: `${companyName}.${projectName}` }]);
-    let renamedFiles = 0;
-    const named = entries.filter((e) => path.posix.basename(e.rel).includes(TEMPLATE_NAMESPACE))
-        .sort((a, b) => b.rel.split('/').length - a.rel.split('/').length);
-    for (const e of named) {
-        const from = path.join(projectDir, e.rel);
-        const to = path.join(path.dirname(from), namePart(path.basename(from)));
-        if (await fs.pathExists(to)) throw new Error(`cannot rename ${e.rel}: target exists`);
-        await fs.move(from, to);
-        renamedFiles += 1;
-    }
+    // 2. names, in the order checked above
+    for (const m of moves) await fs.move(m.from, m.to);
+    const renamedFiles = moves.length;
 
     // 3. PlayerSettings
     const settingsFile = path.join(projectDir, 'ProjectSettings', 'ProjectSettings.asset');

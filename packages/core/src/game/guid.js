@@ -68,4 +68,4 @@ async function cloneWithNewGuids(srcDir, dstDir, { seed, rename = [] }) {
     return { map };
 }
 
-module.exports = { GUID_RE, newGuid, readMetaGuid, remapGuids, cloneWithNewGuids };
+module.exports = { GUID_RE, newGuid, readMetaGuid, remapGuids, renamer, cloneWithNewGuids };

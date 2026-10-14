@@ -20,8 +20,9 @@ PlayerSettings:
   - unitybase
 `;
 
-async function fixture() {
+async function fixture(t) {
     const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'gid-'));
+    t.after(() => fs.remove(dir));
     await fs.outputFile(path.join(dir, 'ProjectSettings/ProjectSettings.asset'), SETTINGS);
     await fs.outputFile(path.join(dir, 'Assets/_Project/Core/Log/Kturker.UnityBase.Core.Log.asmdef'),
         '{\n    "name": "Kturker.UnityBase.Core.Log",\n    "rootNamespace": "Kturker.UnityBase.Core.Log",\n    "references": ["Kturker.UnityBase.Core.Domain"]\n}\n');
@@ -36,8 +37,8 @@ async function fixture() {
 }
 const ARGS = { companyName: 'Acme', projectName: 'SkyHopper', appName: 'Sky Hopper', packageName: 'com.acme.skyhopper', minSdk: 26, iosVersion: '16.0' };
 
-test('renames namespaces, asmdefs, YAML type names, files and ProjectSettings', async () => {
-    const dir = await fixture();
+test('renames namespaces, asmdefs, YAML type names, files and ProjectSettings', async (t) => {
+    const dir = await fixture(t);
     await applyGameIdentity(dir, ARGS);
     const asmdefPath = path.join(dir, 'Assets/_Project/Core/Log/Acme.SkyHopper.Core.Log.asmdef');
     const asmdef = JSON.parse(await fs.readFile(asmdefPath, 'utf8'));
@@ -56,8 +57,8 @@ test('renames namespaces, asmdefs, YAML type names, files and ProjectSettings', 
     for (const line of ['companyName: Acme', 'productName: Sky Hopper', 'AndroidMinSdkVersion: 26', 'iOSTargetOSVersionString: 16.0', '  - skyhopper', 'Android: com.acme.skyhopper', 'iPhone: com.acme.skyhopper']) assert.ok(settings.includes(line), line);
 });
 
-test('a project named Unity keeps other Unity words', async () => {
-    const dir = await fixture();
+test('a project named Unity keeps other Unity words', async (t) => {
+    const dir = await fixture(t);
     await applyGameIdentity(dir, { ...ARGS, projectName: 'Unity' });
     const cs = await fs.readFile(path.join(dir, 'Assets/_Project/Core/Log/UnityLog.cs'), 'utf8');
     assert.match(cs, /class UnityLog/);
@@ -65,18 +66,19 @@ test('a project named Unity keeps other Unity words', async () => {
     assert.match(cs, /namespace Acme\.Unity\.Core\.Log/);
 });
 
-test('renames folders deepest first and keeps their .meta', async () => {
-    const dir = await fixture();
+test('renames folders deepest first and keeps their .meta', async (t) => {
+    const dir = await fixture(t);
     await fs.outputFile(path.join(dir, 'Assets/Kturker.UnityBase.Mods/Kturker.UnityBase.Mods.Foo.cs'), 'class Foo {}\n');
     await fs.outputFile(path.join(dir, 'Assets/Kturker.UnityBase.Mods.meta'), 'guid: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n');
     const { renamedFiles } = await applyGameIdentity(dir, ARGS);
     assert.ok(await fs.pathExists(path.join(dir, 'Assets/Acme.SkyHopper.Mods/Acme.SkyHopper.Mods.Foo.cs')));
     assert.ok(await fs.pathExists(path.join(dir, 'Assets/Acme.SkyHopper.Mods.meta')));
-    assert.ok(renamedFiles >= 4);
+    // the asmdef and its .meta, the folder, its .meta and the script inside
+    assert.strictEqual(renamedFiles, 5);
 });
 
-test('every applicationIdentifier entry the template has gets the package, Standalone included', async () => {
-    const dir = await fixture();
+test('every applicationIdentifier entry the template has gets the package, Standalone included', async (t) => {
+    const dir = await fixture(t);
     const file = path.join(dir, 'ProjectSettings/ProjectSettings.asset');
     await fs.writeFile(file, SETTINGS.replace('  applicationIdentifier: {}\n',
         '  applicationIdentifier:\n    Android: com.kturker.unitybase\n    Standalone: com.kturker.unitybase\n    iPhone: com.kturker.unitybase\n    tvOS: com.kturker.unitybase\n'));
@@ -84,4 +86,14 @@ test('every applicationIdentifier entry the template has gets the package, Stand
     const settings = await fs.readFile(file, 'utf8');
     assert.match(settings, /  applicationIdentifier:\n    Android: com\.acme\.skyhopper\n    Standalone: com\.acme\.skyhopper\n    iPhone: com\.acme\.skyhopper\n    tvOS: com\.acme\.skyhopper\n/);
     assert.ok(!settings.includes('com.kturker'));
+});
+
+test('a name collision is found before anything is renamed', async (t) => {
+    const dir = await fixture(t);
+    await fs.outputFile(path.join(dir, 'Assets/Deep/Er/Kturker.UnityBase.Free.cs'), 'class Free {}\n');
+    await fs.outputFile(path.join(dir, 'Assets/Kturker.UnityBase.Taken.cs'), 'class Taken {}\n');
+    await fs.outputFile(path.join(dir, 'Assets/Acme.SkyHopper.Taken.cs'), 'class Other {}\n');
+    await assert.rejects(applyGameIdentity(dir, ARGS), /cannot rename Assets\/Kturker\.UnityBase\.Taken\.cs: target exists/);
+    assert.ok(await fs.pathExists(path.join(dir, 'Assets/Deep/Er/Kturker.UnityBase.Free.cs')));
+    assert.match(await fs.readFile(path.join(dir, 'Assets/_Project/Core/Log/Kturker.UnityBase.Core.Log.asmdef'), 'utf8'), /"Kturker\.UnityBase\.Core\.Log"/);
 });
