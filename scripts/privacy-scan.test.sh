@@ -36,6 +36,9 @@ plant bad other-repo.txt        'git clone Keremturker/Cmp-wizard-backend'
 plant bad cmpose-fork.txt       'Keremturker/cmpose-private'
 plant bad commit-hash.txt       "commit: '0123456789abcdef0123456789abcdef01234567'"
 plant bad ipv4.txt              'host 10.1.2.3 next to 203.0.113.9'
+plant bad ipv4-after-version.txt 'XboxOneVersion: 1.0.0.0 and host 10.1.2.3'
+plant bad name-kerem-near-kturker.txt 'Kturker.UnityBase by Kerem'
+plant bad name-keremturker-bare.txt 'Keremturker'
 plant bad secret-ant.txt        "key=sk-""ant-api03-$X30"
 plant bad secret-proj.txt       "key=sk-""proj-$X30"
 plant bad secret-slack.txt      "xox""b-123-456"
@@ -49,7 +52,7 @@ out=$(bash "$SCAN" "$TMP/bad"); code=$?
 if [ "$code" -ne 1 ]; then echo "FAIL: bad repo exited $code, expected 1"; fail=1; fi
 for f in 'name with space.txt' lower-users.txt windows-users.txt home.txt name-kerem-lower.txt \
          name-kerem-upper.txt name-tuerker-title.txt name-tuerker-lower.txt name-tuerker-upper.txt name-turker-ascii.txt \
-         template-fork.txt bare-kturker.txt other-repo.txt cmpose-fork.txt commit-hash.txt ipv4.txt secret-ant.txt secret-proj.txt secret-slack.txt \
+         name-kerem-near-kturker.txt name-keremturker-bare.txt ipv4-after-version.txt template-fork.txt bare-kturker.txt other-repo.txt cmpose-fork.txt commit-hash.txt ipv4.txt secret-ant.txt secret-proj.txt secret-slack.txt \
          secret-google.txt secret-ghp.txt secret-aws.txt branch.txt marker-handoff.txt \
          marker-superpowers.txt; do
     printf '%s\n' "$out" | grep -qF -- "$f:1:" || { echo "FAIL: not reported: $f"; fail=1; }
@@ -73,10 +76,12 @@ plant clean allowed.txt "$(printf '%s\n' \
     'assert.match(x, /com\.kturker\.multiplatform and com\/kturker\/multiplatform/)' \
     'dir com/kturker/multiplatform and module com.kturker:networkmonitor' \
     "path.join('com', 'kturker')" \
+    'namespace Kturker.UnityBase.Core and "Kturker"' \
     'loopback 127.0.0.1 and docs 192.0.2.4, 198.51.100.7, 203.0.113.45' \
     'sdk.dir=/home/dev/Android/sdk' \
     'feature/home/presentation' \
     'ca-app-pub-3940256099942544~3347511713')"
+plant clean version-quad.txt 'XboxOneVersion: 1.0.0.0'
 out=$(bash "$SCAN" "$TMP/clean"); code=$?
 if [ "$code" -ne 0 ] || ! printf '%s\n' "$out" | grep -qxF 'PRIVACY OK'; then
     echo "FAIL: clean repo exited $code:"; printf '%s\n' "$out"; fail=1

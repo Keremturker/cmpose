@@ -42,14 +42,17 @@ check 'private path' '' '/Users/|C:\\Users\\|(^|[[:space:]"'"'"'`=(])/(home|user
 #                            (com.kturker.multiplatform, com.kturker:networkmonitor), also
 #                            regex-escaped in tests (com\.kturker, com\/kturker)
 #   'kturker'                path segment of that package in a test (path.join('com', 'kturker'))
-NAME_ALLOW='(^|[^A-Za-z0-9_])(Keremturker/(CmpTemplate|cmpose-template|cmpose)|com\\?[./:]kturker|'"'"'kturker'"'"')([^A-Za-z0-9_-]|$)'
+#   Kturker                  the template's identifier as a whole word, standalone or as the
+#                            Kturker.UnityBase namespace prefix (Unity template); Keremturker, Turker, Kerem stay reported
+NAME_ALLOW='(^|[^A-Za-z0-9_])(Keremturker/(CmpTemplate|cmpose-template|cmpose)|com\\?[./:]kturker|'"'"'kturker'"'"'|Kturker)([^A-Za-z0-9_-]|$)'
 check 'personal name' '-i' 'kerem|t(u|ü|Ü)rker' "$NAME_ALLOW"
 
 # IPv4 allowlist (addresses that can never point at a real server):
 #   192.0.2.x, 198.51.100.x, 203.0.113.x  documentation ranges (RFC 5737), used in tests
 #   127.x.x.x                            loopback, used in tests
-# No version-like strings are allowlisted: none currently match the pattern.
-IPV4_ALLOW='(^|[^0-9.])((192\.0\.2|198\.51\.100|203\.0\.113)\.[0-9]{1,3}|127\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})([^0-9.]|$)'
+#   <Key>Version: 1.0.0.0                a dotted version quad right after a YAML key ending in
+#                                        Version: (Unity ProjectSettings), not an address
+IPV4_ALLOW='(^|[^0-9.])((192\.0\.2|198\.51\.100|203\.0\.113)\.[0-9]{1,3}|127\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}|Version:[[:space:]]*([0-9]{1,3}\.){3}[0-9]{1,3})([^0-9.]|$)'
 check 'IPv4 address' '' '\b([0-9]{1,3}\.){3}[0-9]{1,3}\b' "$IPV4_ALLOW"
 
 # A 40-hex literal looks like a git commit and may name an object of a private repository.
