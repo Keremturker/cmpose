@@ -32,12 +32,21 @@ async function owningAsmdef(projectDir, rel) {
     return null;
 }
 
+// Writes value back as JSON in the original text's format: its indent (spaces or tab), line ending and final newline
+function sameFormatJson(original, value) {
+    const eol = original.includes('\r\n') ? '\r\n' : '\n';
+    const indent = /^[{[]\r?\n([ \t]+)\S/.exec(original);
+    const body = JSON.stringify(value, null, indent ? indent[1] : (original.includes('\n') ? 2 : 0));
+    return body.replace(/\n/g, eol) + (/\r?\n$/.test(original) ? eol : '');
+}
+
 // Reads every file the wiring edits and checks its anchors before anything is written
 async function readAnchors(projectDir, fail) {
     if (!(await fs.pathExists(path.join(projectDir, SAMPLE_DIR)))) throw fail(SAMPLE_DIR);
     const manifestFile = path.join(projectDir, MANIFEST);
     if (!(await fs.pathExists(manifestFile))) throw fail(MANIFEST);
-    const manifest = JSON.parse(await fs.readFile(manifestFile, 'utf8'));
+    const manifestText = await fs.readFile(manifestFile, 'utf8');
+    const manifest = JSON.parse(manifestText);
     if (!manifest || typeof manifest.flags !== 'object') throw fail(`${MANIFEST} "flags"`);
 
     const installerFile = path.join(projectDir, GAME_INSTALLER);
@@ -55,13 +64,14 @@ async function readAnchors(projectDir, fail) {
 
     const asmdefRel = await owningAsmdef(projectDir, GAME_DIR);
     if (!asmdefRel) throw fail(`the asmdef owning ${GAME_INSTALLER}`);
-    const asmdef = JSON.parse(await fs.readFile(path.join(projectDir, asmdefRel), 'utf8'));
+    const asmdefText = await fs.readFile(path.join(projectDir, asmdefRel), 'utf8');
+    const asmdef = JSON.parse(asmdefText);
     const refAt = Array.isArray(asmdef.references) ? asmdef.references.indexOf(SAMPLE_INSTALLER_ASSEMBLY) : -1;
     if (refAt < 0) throw fail(`the ${SAMPLE_INSTALLER_ASSEMBLY} reference in ${asmdefRel}`);
 
     return {
-        manifest, manifestFile, installerFile, lines, eol, end, usingAt,
-        indent: /^\s*/.exec(sampleLine)[0], asmdefRel, asmdef, refAt
+        manifest, manifestText, manifestFile, installerFile, lines, eol, end, usingAt,
+        indent: /^\s*/.exec(sampleLine)[0], asmdefRel, asmdef, asmdefText, refAt
     };
 }
 
@@ -95,11 +105,13 @@ async function cloneModules(projectDir, features, { seed }) {
             throw new Error(`module ${name}: ${FEATURES}/${pascal(name)} already exists`);
         }
     }
+    // Every module waits on the same anchors, so an anchor error names them all
+    const who = `${names.length > 1 ? 'modules' : 'module'} ${names.join(', ')}`;
     let anchors;
     try {
-        anchors = await readAnchors(projectDir, (what) => new Error(`module ${names[0]}: ${what} not found in the template`));
+        anchors = await readAnchors(projectDir, (what) => new Error(`${who}: ${what} not found in the template`));
     } catch (error) {
-        if (error instanceof SyntaxError) throw new Error(`module ${names[0]}: ${error.message}`);
+        if (error instanceof SyntaxError) throw new Error(`${who}: ${error.message}`);
         throw error;
     }
 
@@ -118,9 +130,9 @@ async function cloneModules(projectDir, features, { seed }) {
         created.push(`${FEATURES}/${p}`);
     }
 
-    const { manifest, manifestFile, lines, eol, end, usingAt, indent, asmdef, refAt } = anchors;
+    const { manifest, manifestText, manifestFile, lines, eol, end, usingAt, indent, asmdef, asmdefText, refAt } = anchors;
     addFlagTwins(manifest, names);
-    await fs.writeFile(manifestFile, `${JSON.stringify(manifest, null, 2)}\n`);
+    await fs.writeFile(manifestFile, sameFormatJson(manifestText, manifest));
 
     // Installer lines go before the end marker (in order), using lines right after the Sample one
     const installs = names.map((n) => `${indent}if (registerViews) new ${pascal(n)}Installer(registerViews).Install(builder);`);
@@ -131,7 +143,7 @@ async function cloneModules(projectDir, features, { seed }) {
     await fs.writeFile(anchors.installerFile, next.join(eol));
 
     asmdef.references.splice(refAt + 1, 0, ...names.map((n) => `Kturker.UnityBase.Features.${pascal(n)}.Installer`));
-    await fs.writeFile(path.join(projectDir, anchors.asmdefRel), `${JSON.stringify(asmdef, null, 4)}\n`);
+    await fs.writeFile(path.join(projectDir, anchors.asmdefRel), sameFormatJson(asmdefText, asmdef));
     return created;
 }
 
