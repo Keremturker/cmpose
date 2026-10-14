@@ -93,7 +93,9 @@ function createServer({ cacheDir, remoteUrl } = {}) {
                     'A group left out keeps the test IDs / placeholders, reported as a warning'),
             templateRef: z.string().optional().describe('Override the pinned game template tag')
         }
-    }, async (args, extra) => runGameGenerate(args, { cacheDir, remoteUrl, onProgress: progressReporter(extra, 2) }));
+    }, async (args, extra) => runGameGenerate(args, {
+        cacheDir, remoteUrl, onProgress: progressReporter(extra, 2), generatorVersion: `mcp@${pkg.version}`
+    }));
 
     return server;
 }

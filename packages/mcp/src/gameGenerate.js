@@ -15,7 +15,7 @@ const NEXT_STEPS_GAME = [
 
 // Validate → template cache → generate in a hidden sibling → rename into place.
 // Never overwrites anything and never leaves half a project behind.
-async function runGameGenerate(args, { cacheDir, remoteUrl, onProgress = () => { }, now } = {}) {
+async function runGameGenerate(args, { cacheDir, remoteUrl, onProgress = () => { }, generatorVersion = null, now } = {}) {
     const { outputDir, templateRef, ...rest } = args || {};
     if (typeof outputDir !== 'string' || !path.isAbsolute(outputDir)) {
         return fail('outputDir must be an absolute path (for example /path/to/projects).');
@@ -45,7 +45,7 @@ async function runGameGenerate(args, { cacheDir, remoteUrl, onProgress = () => {
         await fs.copy(cache.dir, work);
         const source = { repo: core.pins.game.repo, ref: cache.ref, commit: cache.commit };
         const summary = await core.game.generateGame(value, {
-            projectDir: work, template: source, coreVersion: core.version, ...(now ? { now } : {})
+            projectDir: work, template: source, coreVersion: core.version, generatorVersion, ...(now ? { now } : {})
         });
         const late = await targetProblem(target);
         if (late) throw new Error(late);

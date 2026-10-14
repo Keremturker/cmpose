@@ -88,6 +88,8 @@ test('generates a blank project with a module', async () => {
     assert.ok(await fs.pathExists(path.join(projectDir, 'Assets/_Project/Features/Shop')));
     assert.ok(await fs.pathExists(path.join(projectDir, 'ProjectSettings/ProjectSettings.asset')));
     assert.match(r.content[0].text, /Generated SkyHopper/);
+    const record = await fs.readJson(path.join(projectDir, '.cmpose/generation.json'));
+    assert.strictEqual(record.generatorVersion, `mcp@${require('../package.json').version}`);
     assert.deepStrictEqual(await leftovers(outputDir), []);
     await cleanup();
 });
