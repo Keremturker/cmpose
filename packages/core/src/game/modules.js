@@ -107,11 +107,13 @@ async function cloneModules(projectDir, features, { seed }) {
     for (const name of names) {
         const p = pascal(name);
         // Localization keys ('sample.x') are renamed only where they are keys: string literals and JSON keys
-        // ("sample.x") and the prefabs' 'key: sample.x'; a C# member named sample ('sample.Clicked') stays
+        // ("sample.x") and the prefabs' 'key: sample.x'; a C# member named sample ('sample.Clicked') stays.
+        // The literal "sample" is the save slot (SavedCompletionCounter's SaveSchema): each copy gets its own
         await cloneWithNewGuids(path.join(projectDir, SAMPLE_DIR), path.join(projectDir, FEATURES, p), {
             seed: `${seed}:${name}`,
             rename: [{ from: 'Sample', to: p }, { from: 'sample.json', to: `${name}.json` },
-                { from: '"sample.', to: `"${name}.` }, { from: 'key: sample.', to: `key: ${name}.` }]
+                { from: '"sample.', to: `"${name}.` }, { from: 'key: sample.', to: `key: ${name}.` },
+                { from: '"sample"', to: `"${name}"` }]
         });
         created.push(`${FEATURES}/${p}`);
     }

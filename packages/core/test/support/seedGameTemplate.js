@@ -284,6 +284,7 @@ async function seedGameTemplate(dir, { full = false } = {}) {
         ['    public sealed class SampleAdsPresenter',
             '    {',
             '        public const string TitleKey = "sample.title";',
+            '        public static readonly SaveSchema<int> Schema = new SaveSchema<int>("sample", 1);',
             '        private readonly ISampleView sample;',
             '        public void Start() => sample.CompleteClicked += OnComplete;',
             '    }', ''].join('\n')));

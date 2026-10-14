@@ -33,6 +33,13 @@ test('renames only the Sample localization keys, not C# members named sample', a
     assert.match(await read(d, 'Assets/_Project/Features/Shop/Ads/Bonus.prefab'), /^ {2}key: shop\.back$/m);
 });
 
+test('each copy gets its own save slot; Sample keeps "sample"', async () => {
+    const d = await project();
+    await cloneModules(d, ['shop'], { seed: 's' });
+    assert.match(await read(d, 'Assets/_Project/Features/Shop/Ads/ShopAdsPresenter.cs'), /new SaveSchema<int>\("shop", 1\)/);
+    assert.match(await read(d, 'Assets/_Project/Features/Sample/Ads/SampleAdsPresenter.cs'), /new SaveSchema<int>\("sample", 1\)/);
+});
+
 test('wires the installer, its using line and the App asmdef reference', async () => {
     const d = await project();
     await cloneModules(d, ['shop', 'quests'], { seed: 's' });
