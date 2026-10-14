@@ -17,7 +17,15 @@ const GAME_SCHEMA = Object.freeze({
     },
     limits: { minSdkMin: 25, minSdkMax: 36, iosVersionMin: '15.0', maxModules: 3, nameMax: 30, appNameMax: 30, packageNameMax: 50, moduleNameMax: 20 },
     reservedNames: ['UnityBase', 'Kturker'],
-    reservedModuleNames: ['sample', 'shell', 'showcase', 'build'],
+    // Module names a copy of Sample cannot take: the template's own folders; names whose copy breaks C# binding
+    // (game: GameInstaller would call itself; action, i: VContainer's ActionInstaller/IInstaller; bonus, leaderboard:
+    // Sample's own BonusView/LeaderboardView); names whose namespace would hide a type the Sample code uses
+    // (Button, Lifetime, Object, ...); and the template's string-key prefixes (a duplicate key is dropped)
+    reservedModuleNames: ['sample', 'shell', 'showcase', 'build',
+        'game', 'action', 'i', 'bonus', 'leaderboard',
+        'button', 'lifetime', 'object', 'preserve', 'resources', 'serializable', 'transform',
+        'about', 'ads', 'boot', 'common', 'guide', 'inspector', 'leaderboards', 'menu', 'network', 'pause',
+        'purchases', 'runner2d', 'settings', 'theme', 'track3d', 'update'],
     reservedPackagePrefix: 'com.kturker'
 });
 

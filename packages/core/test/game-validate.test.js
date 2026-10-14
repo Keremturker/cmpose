@@ -68,3 +68,16 @@ test('inherited keys and non-object ids never throw', () => {
     for (const ids of [JSON.parse('{"constructor":{}}'), JSON.parse('{"__proto__":{}}'), { toString: {} }, 'x', []]) bad({ ...b, ids }, 'ids');
     bad({ ...b, flags: ['constructor'] }, 'flags');
 });
+test('module names whose copy would clash with the template are reserved', () => {
+    const b = { ...base, templateType: 'blank' };
+    // C#: game (GameInstaller calls itself), action/i (VContainer ActionInstaller/IInstaller), bonus/leaderboard
+    // (Sample's BonusView/LeaderboardView); a namespace hiding a type the Sample code uses; the template's string-key prefixes
+    const reserved = ['game', 'action', 'i', 'bonus', 'leaderboard',
+        'button', 'lifetime', 'object', 'preserve', 'resources', 'serializable', 'transform',
+        'about', 'ads', 'boot', 'common', 'guide', 'inspector', 'leaderboards', 'menu', 'network', 'pause',
+        'purchases', 'runner2d', 'settings', 'theme', 'track3d', 'update'];
+    for (const name of reserved) bad({ ...b, features: ['shop', name] }, 'features');
+    const { describeGame } = require('../src/game/describe');
+    for (const name of reserved) assert.ok(describeGame().contract.reservedModuleNames.includes(name), name);
+    ok({ ...b, features: ['app', 'core', 'save'] });
+});
