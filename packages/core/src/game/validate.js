@@ -160,8 +160,8 @@ function validateGame(input) {
         let v = input.iosVersion;
         if (typeof v === 'number' && Number.isFinite(v)) v = String(v);
         v = normalizeIosVersion(v);
-        if (v === null
-            || cmpVersion(parseIosVersion(v), parseIosVersion(S.limits.iosVersionMin)) < 0
+        if (v === null) return fail('iosVersion must look like 15.0 (major.minor; a third part must be 0)');
+        if (cmpVersion(parseIosVersion(v), parseIosVersion(S.limits.iosVersionMin)) < 0
             || cmpVersion(parseIosVersion(v), parseIosVersion(limits.iosVersionMax)) > 0) {
             return fail(`iosVersion must be from ${S.limits.iosVersionMin} to ${limits.iosVersionMax}`);
         }

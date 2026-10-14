@@ -119,3 +119,10 @@ test('wrongly typed ids, ci and flags are rejected with a clear message', () => 
     for (const ci of ['true', 1, null]) assert.strictEqual(validateGame({ ...base, ci }).error, 'ci must be a boolean');
     for (const flags of ['ads', { ads: true }, null]) assert.match(validateGame({ ...b, flags }).error, /^flags must be an array of: /);
 });
+
+test('a malformed iosVersion gets a format message, an out-of-range one the range', () => {
+    for (const iosVersion of ['15.1.2', '15.0.1', 'abc', ' 15.0']) {
+        assert.strictEqual(validateGame({ ...base, iosVersion }).error, 'iosVersion must look like 15.0 (major.minor; a third part must be 0)');
+    }
+    for (const iosVersion of ['14.0', '99', '26.20']) assert.match(validateGame({ ...base, iosVersion }).error, /^iosVersion must be from 15\.0 to /);
+});
