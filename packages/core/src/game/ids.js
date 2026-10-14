@@ -1,5 +1,6 @@
 const path = require('path');
 const fs = require('fs-extra');
+const { idProblem } = require('./validate');
 
 // Where each id group lands in the Unity template. `keys` maps the line's key to the field of the group.
 // kind 'cs': `public const string <Key> = "<value>";`, 'yaml': `  <key>: <value>`, 'xml': the games_app_id string.
@@ -52,22 +53,38 @@ const PATTERNS = {
     xml: (key) => new RegExp(`(<string name="${key}"[^>]*>)[^<]*(</string>)`, 'g')
 };
 
+// One regex pass: the replacer counts the matches; a function replacer never interprets `$` sequences
 function replaceOnce(text, file, kind, key, value) {
-    const re = PATTERNS[kind](key);
-    const n = (text.match(re) || []).length;
+    let n = 0;
+    const next = text.replace(PATTERNS[kind](key), (_, before, after) => {
+        n += 1;
+        return `${before}${value}${after}`;
+    });
     if (n !== 1) throw new Error(`${file}: ${key} found ${n} times`);
-    // A function replacer, so `$` sequences in the value are never interpreted
-    return text.replace(re, (_, before, after) => `${before}${value}${after}`);
+    return next;
 }
 
-// Writes the given id groups into the project; every target line must be there exactly once. All files are checked
-// before any is written, so a failure leaves the project as it was. Returns the groups written.
+// The values land inside C#, YAML and XML lines: the same rules as validateGame, checked here too
+function checkValues(group, values) {
+    if (!values || typeof values !== 'object' || Array.isArray(values)) throw new Error(`ids.${group} must be an object`);
+    for (const { keys } of ID_TARGETS[group]) {
+        for (const field of Object.values(keys)) {
+            const problem = idProblem(group, field, values[field]);
+            if (problem) throw new Error(`ids.${group}.${field} ${problem}`);
+        }
+    }
+}
+
+// Writes the given id groups into the project; every value must pass validateGame's ID rules and every target line
+// must be there exactly once. All are checked before any file is written, so a failure leaves the project as it was.
+// Returns the groups written.
 async function writeGameIds(projectDir, ids) {
+    const groups = Object.keys(ID_TARGETS).filter((group) => ids && ids[group]);
+    for (const group of groups) checkValues(group, ids[group]);
     const written = [];
     const updates = [];
-    for (const group of Object.keys(ID_TARGETS)) {
-        const values = ids && ids[group];
-        if (!values) continue;
+    for (const group of groups) {
+        const values = ids[group];
         for (const { file, kind, keys } of ID_TARGETS[group]) {
             const abs = path.join(projectDir, file);
             let text;

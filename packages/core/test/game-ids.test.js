@@ -89,7 +89,7 @@ const TEMPLATE = {
     ]
 };
 
-// Clearly fake IDs; one carries `$&` and `$1` so a string replacer would mangle it
+// Clearly fake IDs, in the shapes validateGame accepts
 const IDS = {
     admob: {
         androidAppId: 'ca-app-pub-1234567890123456~1111111111',
@@ -101,7 +101,7 @@ const IDS = {
         iosInterstitial: 'ca-app-pub-1234567890123456/7777777777',
         iosRewarded: 'ca-app-pub-1234567890123456/8888888888'
     },
-    revenueCat: { appleApiKey: 'appl_fakeAppleKey$&', googleApiKey: 'goog_fakeGoogleKey$1' },
+    revenueCat: { appleApiKey: 'appl_fakeAppleKey000000000', googleApiKey: 'goog_fakeGoogleKey00000000' },
     gameServices: {
         androidAppId: '123456789012',
         leaderboardAndroid: 'CgkIfakeLeaderboard',
@@ -175,7 +175,7 @@ test('writeGameIds writes only the groups given', async (t) => {
     assert.deepEqual(await writeGameIds(dir, { revenueCat: IDS.revenueCat }), ['revenueCat']);
     assert.equal(await read(dir, ADS), TEMPLATE[ADS].join('\n'));
     assert.equal(await read(dir, LEADERBOARDS), TEMPLATE[LEADERBOARDS].join('\n'));
-    assert.match(await read(dir, PURCHASES), /ApiKeyGoogle = "goog_fakeGoogleKey\$1";/);
+    assert.match(await read(dir, PURCHASES), /ApiKeyGoogle = "goog_fakeGoogleKey00000000";/);
 });
 
 test('writeGameIds with no groups changes nothing', async (t) => {
@@ -218,4 +218,18 @@ test('ID_TARGETS covers every field of every id group in the contract', () => {
         const fields = ID_TARGETS[group].flatMap((target) => Object.values(target.keys));
         assert.deepEqual(fields.sort(), [...def.fields].sort(), group);
     }
+});
+
+test('writeGameIds refuses values validateGame would reject and writes nothing', async (t) => {
+    const { writeGameIds } = require('../src/game/ids');
+    const dir = await seed(t);
+    const cases = [
+        [{ revenueCat: { ...IDS.revenueCat, googleApiKey: 'goog_fakeGoogleKey$1$&xxxxxx' } }, /ids\.revenueCat\.googleApiKey must not contain/],
+        [{ revenueCat: { ...IDS.revenueCat, appleApiKey: 'appl_short' } }, /ids\.revenueCat\.appleApiKey must look like/],
+        [{ gameServices: { ...IDS.gameServices, leaderboardIos: 'cmpose.replace_me.x' } }, /ids\.gameServices\.leaderboardIos is a placeholder/],
+        [{ admob: { ...IDS.admob, iosBanner: undefined } }, /ids\.admob\.iosBanner must be a string/],
+        [{ admob: 'x' }, /ids\.admob must be an object/]
+    ];
+    for (const [ids, message] of cases) await assert.rejects(writeGameIds(dir, { admob: IDS.admob, ...ids }), message);
+    for (const [rel, lines] of Object.entries(TEMPLATE)) assert.equal(await read(dir, rel), lines.join('\n'), rel);
 });

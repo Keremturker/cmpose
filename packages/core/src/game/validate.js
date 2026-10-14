@@ -183,4 +183,4 @@ function validateGame(input) {
     };
 }
 
-module.exports = { validateGame };
+module.exports = { validateGame, idProblem };
