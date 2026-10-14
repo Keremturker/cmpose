@@ -2,7 +2,12 @@
 
 Generate Compose Multiplatform projects on your own machine — from any AI agent, through MCP.
 
-- `@cmpose/core` — the generator library (the same code cmpose.dev runs).
+Ask your agent for an app ("a blank Compose Multiplatform app called Habits with Room and
+theming") and get a buildable Android + iOS project from a tested template: Koin, Navigation,
+Ktor, Room, DataStore, theming, multi-language, RevenueCat purchases, AdMob ads, detekt and CI
+as options. What each option adds: [packages/mcp/README.md](packages/mcp/README.md).
+
+- `@cmpose/core` — the generator library (the same code [cmpose.dev](https://cmpose.dev) runs).
 - `@cmpose/mcp` — a local stdio MCP server with two tools: `cmp_describe` and `cmp_generate`.
 
 Requires Node.js 20+ and git. The first generation downloads the pinned template

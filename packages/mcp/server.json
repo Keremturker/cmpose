@@ -1,0 +1,22 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.Keremturker/cmpose",
+  "title": "cmpose",
+  "description": "Generate buildable Compose Multiplatform (Android + iOS) projects locally from a tested template.",
+  "websiteUrl": "https://cmpose.dev",
+  "repository": {
+    "url": "https://github.com/Keremturker/cmpose",
+    "source": "github",
+    "id": "1418016719",
+    "subfolder": "packages/mcp"
+  },
+  "version": "0.1.2",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@cmpose/mcp",
+      "version": "0.1.2",
+      "transport": { "type": "stdio" }
+    }
+  ]
+}
