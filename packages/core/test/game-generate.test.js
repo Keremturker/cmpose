@@ -182,3 +182,16 @@ test('the game index exposes the pipeline and its parts', () => {
     assert.equal(game.generateGame, generateGame);
     assert.equal(require('../src').game.describeGame, describeGame);
 });
+
+test('a build scene the template lists but does not have is dropped from the build list', async (t) => {
+    const dir = await seeded(t);
+    const scenes = path.join(dir, 'ProjectSettings/EditorBuildSettings.asset');
+    const before = await fs.readFile(scenes, 'utf8');
+    assert.ok(before.includes('  m_configObjects'));
+    await fs.writeFile(scenes, before.replace('  m_configObjects',
+        `  - enabled: 1\n    path: ${P}/Scenes/Gone.unity\n    guid: ${'e7'.repeat(16)}\n  m_configObjects`));
+    await generateGame(value({ templateType: 'blank' }), { projectDir: dir, template: TEMPLATE, coreVersion: '0.2.0', now: NOW });
+    const after = await fs.readFile(scenes, 'utf8');
+    assert.ok(!after.includes('Gone.unity'));
+    assert.ok(!after.includes('e7'.repeat(16)));
+});
