@@ -21,6 +21,7 @@ test('buildGameRecord records the options and id statuses, never the id values',
     assert.deepEqual(record, {
         generator: '@cmpose/core',
         coreVersion: '0.2.0',
+        generatorVersion: null,
         engine: 'unity',
         unityVersion: GAME_SCHEMA.unityVersion,
         templateType: 'blank',
@@ -36,6 +37,10 @@ test('buildGameRecord records the options and id statuses, never the id values',
     });
     assert.ok(!JSON.stringify(record).includes(ADMOB_APP));
     assert.ok(!JSON.stringify(record).includes('Acme'));
+});
+
+test('buildGameRecord records who ran the core (e.g. mcp@0.2.0)', () => {
+    assert.equal(buildGameRecord({ template: TEMPLATE, coreVersion: '0.2.0', generatorVersion: 'mcp@0.2.0', value: VALUE, now: NOW }).generatorVersion, 'mcp@0.2.0');
 });
 
 test('writeGameRecord writes .cmpose/generation.json as 2-space JSON with a trailing newline', async (t) => {

@@ -16,11 +16,13 @@ function idStatuses(flags, ids) {
     return out;
 }
 
-/** The .cmpose/generation.json content of a generated Unity game (no personal data, no ID values) */
-function buildGameRecord({ template, coreVersion, value, now = new Date() }) {
+/** The .cmpose/generation.json content of a generated Unity game (no personal data, no ID values);
+ * generatorVersion names the caller (e.g. mcp@0.2.0), null when not given */
+function buildGameRecord({ template, coreVersion, generatorVersion = null, value, now = new Date() }) {
     return {
         generator: '@cmpose/core',
         coreVersion,
+        generatorVersion: generatorVersion || null,
         engine: 'unity',
         unityVersion: GAME_SCHEMA.unityVersion,
         templateType: value.templateType,

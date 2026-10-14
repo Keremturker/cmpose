@@ -31,9 +31,9 @@ function gameWarnings(value) {
 }
 
 // Turns a fresh Unity template copy (projectDir) into the requested game, in place.
-// value: validateGame().value. template: { repo, ref, commit } for the record; without it the pinned repo and the
+// value: validateGame().value. generatorVersion: who ran the core, for the record (e.g. mcp@0.2.0). template: { repo, ref, commit } for the record; without it the pinned repo and the
 // cache's markers are recorded. Throws when a step fails or the result fails verification.
-async function generateGame(value, { projectDir, template = null, coreVersion, now = new Date() }) {
+async function generateGame(value, { projectDir, template = null, coreVersion, generatorVersion = null, now = new Date() }) {
     const readMarker = (name) => fs.readFile(path.join(projectDir, name), 'utf8').then((v) => v.trim() || null, () => null);
     const source = template || {
         repo: pins.game.repo,
@@ -69,7 +69,7 @@ async function generateGame(value, { projectDir, template = null, coreVersion, n
 
     // 8. the template's package guid allowlist goes; the record stays
     await fs.remove(path.join(projectDir, PACKAGE_GUIDS));
-    const record = buildGameRecord({ template: source, coreVersion, value, now });
+    const record = buildGameRecord({ template: source, coreVersion, generatorVersion, value, now });
     await writeGameRecord(projectDir, record);
 
     return {
