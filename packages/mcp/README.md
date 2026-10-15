@@ -97,12 +97,12 @@ saving, deep links, and in-app review and update check.
 ## How it works
 
 Generation runs entirely on your machine. The first call downloads the pinned template
-([Keremturker/cmpose-template](https://github.com/Keremturker/cmpose-template)) into
+([whinstudio/cmpose-template](https://github.com/whinstudio/cmpose-template)) into
 `~/.cache/cmpose` (override with `CMPOSE_CACHE_DIR`), and later calls reuse it. Games come the
 same way from the pinned game template
-([Keremturker/cmpose-game-template](https://github.com/Keremturker/cmpose-game-template)); Unity
+([whinstudio/cmpose-game-template](https://github.com/whinstudio/cmpose-game-template)); Unity
 never runs during generation. Each release pins one tag of each template, so `@cmpose/mcp@x.y.z`
 always generates the same project.
 
-Source and issues: [github.com/Keremturker/cmpose](https://github.com/Keremturker/cmpose).
+Source and issues: [github.com/whinstudio/cmpose](https://github.com/whinstudio/cmpose).
 MIT licensed. The projects you generate are yours.

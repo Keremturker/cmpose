@@ -6,12 +6,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Keremturker/cmpose.git",
+    "url": "git+https://github.com/whinstudio/cmpose.git",
     "directory": "packages/mcp"
   },
-  "homepage": "https://github.com/Keremturker/cmpose/tree/main/packages/mcp#readme",
+  "homepage": "https://github.com/whinstudio/cmpose/tree/main/packages/mcp#readme",
   "bugs": {
-    "url": "https://github.com/Keremturker/cmpose/issues"
+    "url": "https://github.com/whinstudio/cmpose/issues"
   },
   "keywords": [
     "mcp",

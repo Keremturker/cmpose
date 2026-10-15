@@ -13,7 +13,7 @@ const pins = require('../src/pins');
 
 const P = 'Assets/_Project';
 const NOW = new Date('2026-10-14T08:30:00.000Z');
-const TEMPLATE = { repo: 'Keremturker/cmpose-game-template', ref: 'game-template-test', commit: 'abc123' };
+const TEMPLATE = { repo: 'whinstudio/cmpose-game-template', ref: 'game-template-test', commit: 'abc123' };
 const ADMOB_APP = 'ca-app-pub-1234567890123456~1234567890';
 const ADMOB_UNIT = 'ca-app-pub-1234567890123456/1234567890';
 const ADMOB = {
@@ -179,7 +179,7 @@ test('describeGame states the engine, the pin, the defaults and the contract', (
 });
 
 test('pins.game names the game template repo', () => {
-    assert.equal(pins.game.repo, 'Keremturker/cmpose-game-template');
+    assert.equal(pins.game.repo, 'whinstudio/cmpose-game-template');
     assert.equal(typeof pins.game.ref, 'string');
     assert.ok(Object.isFrozen(pins.game));
 });

@@ -9,7 +9,7 @@ as options. What each option adds: [packages/mcp/README.md](packages/mcp/README.
 
 It also generates Unity mobile games ("a 2D Unity game called SkyHopper with ads and
 leaderboards"): a Unity 6 (URP) Android + iOS project from the pinned game template
-(`Keremturker/cmpose-game-template`), as a `showcase` sample game (2D runner or 3D track) or a
+(`whinstudio/cmpose-game-template`), as a `showcase` sample game (2D runner or 3D track) or a
 `blank` game with flags for saving, theming, multi-language, networking, RevenueCat purchases,
 AdMob ads and Play Games / Game Center leaderboards, up to 3 feature modules and your real IDs.
 
@@ -18,7 +18,7 @@ AdMob ads and Play Games / Game Center leaderboards, up to 3 feature modules and
   `game_describe` and `game_generate`.
 
 Requires Node.js 20+ and git. The first generation downloads the pinned template
-(`Keremturker/cmpose-template`) into `~/.cache/cmpose` (override: `CMPOSE_CACHE_DIR`).
+(`whinstudio/cmpose-template`) into `~/.cache/cmpose` (override: `CMPOSE_CACHE_DIR`).
 
 ## Use with Claude Code
 

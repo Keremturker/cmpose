@@ -35,10 +35,11 @@ check 'private path' '' '/Users/|C:\\Users\\|(^|[[:space:]"'"'"'`=(])/(home|user
 
 # Case-insensitive; Turkish letters spelled out because LC_ALL=C folds ASCII only.
 # Allowlist (case-sensitive, exact):
-#   Keremturker/cmpose-template  the public template snapshots (pins.js, README); CmpTemplate its private source
-#   Keremturker/cmpose-game-template  the public Unity game template (pins.js game pin)
-#   Keremturker/cmpose       this repository (package.json repository/homepage/bugs);
-#                            any other Keremturker/<repo> is still reported
+#   Keremturker/cmpose       the MCP Registry name io.github.Keremturker/cmpose (mcpName, server.json),
+#                            which stays when the repositories move to whinstudio/
+#   Keremturker/cmpose-template, Keremturker/cmpose-game-template  the template snapshots' former
+#                            address (GitHub redirects it; published releases still clone it);
+#                            CmpTemplate its private source; any other Keremturker/<repo> is still reported
 #   com.kturker / com/kturker / com.kturker:  the template's own package and Maven group
 #                            (com.kturker.multiplatform, com.kturker:networkmonitor), also
 #                            regex-escaped in tests (com\.kturker, com\/kturker)
