@@ -406,3 +406,17 @@ test('replaceInContent keeps the scheme when the project name is unchanged', () 
     const text = 'const val DEEP_LINK_SCHEME = "multiplatform"\n<data android:scheme="multiplatform" />\nmultiplatform://settings';
     assert.equal(SAME_PACKAGE(text, OLD_PROJECT), text);
 });
+
+test('replaceInContent renames the package as a whole name anywhere: a main class, a logger name, a plugin id, a KDoc link', () => {
+    const src = [
+        `application { mainClass.set("${OLD_PACKAGE}.server.MainKt") }`,
+        `    id("${OLD_PACKAGE}.detekt")`,
+        `val log = LoggerFactory.getLogger("${OLD_PACKAGE}.server.auth.FirebaseAuth")`,
+        `/** Holds a [${OLD_PACKAGE}.core.api.Role]. */`
+    ].join('\n');
+    assert.equal(rewrite(src), src.split(OLD_PACKAGE).join(NEW_PACKAGE));
+    // A longer name, or the package as a later segment of another one, is not the package
+    for (const other of [`${OLD_PACKAGE}x.a`, `dev.${OLD_PACKAGE}.a`, `my${OLD_PACKAGE}`]) {
+        assert.equal(rewrite(`val s = "${other}"`), `val s = "${other}"`);
+    }
+});

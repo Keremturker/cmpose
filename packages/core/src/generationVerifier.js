@@ -1,7 +1,7 @@
 const fs = require('fs-extra');
 const path = require('path');
 const { listTextFiles } = require('./projectFiles');
-const { escapeRegExp } = require('./fileService');
+const { escapeRegExp, findResidue, BACKEND_RESIDUE_TOKENS } = require('./fileService');
 const { TEST_SOURCE_SET_REGEX } = require('./featureModules');
 const { OLD_PACKAGE_NAME } = require('./templateIdentity');
 
@@ -324,7 +324,7 @@ async function verifyStoreReady(projectPath, input, packagePath, problems) {
     if (manifest.includes('cmpose:')) problems.add(`${manifestRel}: cmpose marker left`);
     if (!manifest.includes('NSPrivacyAccessedAPICategoryUserDefaults')) problems.add(`${manifestRel}: required reason APIs missing`);
 
-    const flags = input.featuresConfig ? input.featuresConfig : { ads: true, purchases: true };
+    const flags = input.featuresConfig ? input.featuresConfig : { ads: true, purchases: true, backend: false };
     if (flags.ads === true) {
         if (!manifest.includes('NSPrivacyCollectedDataTypeAdvertisingData')) {
             problems.add(`${manifestRel}: ad data not declared although ads is on`);
@@ -337,6 +337,12 @@ async function verifyStoreReady(projectPath, input, packagePath, problems) {
         problems.add(`${manifestRel}: purchase history not declared although purchases is on`);
     } else if (flags.purchases !== true && purchaseHistory) {
         problems.add(`${manifestRel}: purchase history declared although purchases is off`);
+    }
+    const accountData = manifest.includes('NSPrivacyCollectedDataTypeEmailAddress');
+    if (flags.backend === true && !accountData) {
+        problems.add(`${manifestRel}: account data not declared although backend is on`);
+    } else if (flags.backend !== true && accountData) {
+        problems.add(`${manifestRel}: account data declared although backend is off`);
     }
 }
 
@@ -489,6 +495,65 @@ async function readIfExists(file) {
     return (await fs.pathExists(file)) ? fs.readFile(file, 'utf8') : '';
 }
 
+// Backend: blank keeps the server, core/api, core/auth, feature/account and feature/sharing exactly when its
+// backend flag is on, wired, with the Google Sign-In URL scheme left to the build setting; otherwise (and
+// always in showcase) none of them and no reference to them. No cmpose:backend marker is ever left.
+const BACKEND_MODULES = [
+    { dir: 'server', build: 'server/build.gradle.kts', include: ':server' },
+    { dir: 'core/api', build: 'core/api/build.gradle.kts', include: ':core:api' },
+    { dir: 'core/auth', build: 'core/auth/build.gradle.kts', include: ':core:auth' },
+    { dir: 'feature/account', build: 'feature/account/presentation/build.gradle.kts', include: ':feature:account:presentation' },
+    { dir: 'feature/sharing', build: 'feature/sharing/presentation/build.gradle.kts', include: ':feature:sharing:presentation' }
+];
+const BACKEND_SHARED_DEPENDENCIES = ['projects.core.auth', 'projects.feature.account.presentation', 'projects.feature.sharing.presentation'];
+const BACKEND_KOIN_MODULES = ['AuthModule', 'AccountModule', 'SharingModule'];
+const GOOGLE_URL_SCHEME = '<string>$(GOOGLE_REVERSED_CLIENT_ID)</string>';
+const BACKEND_MARKER = 'cmpose:backend';
+
+async function verifyBackend(projectPath, input, cfg, problems) {
+    const on = input.templateType === 'blank' && cfg.backend === true;
+    const exists = (rel) => fs.pathExists(path.join(projectPath, rel));
+
+    for (const file of await listTextFiles(projectPath)) {
+        if ((await fs.readFile(file, 'utf8')).includes(BACKEND_MARKER)) problems.add(`${relPath(projectPath, file)}: ${BACKEND_MARKER} marker left`);
+    }
+
+    if (!on) {
+        const where = input.templateType === 'blank' ? 'although backend is off' : 'in a showcase project';
+        for (const { dir } of BACKEND_MODULES) {
+            if (await exists(dir)) problems.add(`${dir}: present ${where}`);
+        }
+        const tokens = BACKEND_RESIDUE_TOKENS.filter((token) => token.label !== BACKEND_MARKER);
+        for (const problem of await findResidue(projectPath, input.packageName, { tokens, files: [] })) {
+            problems.add(problem.split(path.sep).join('/'));
+        }
+        return;
+    }
+
+    const settings = await readIfExists(path.join(projectPath, 'settings.gradle.kts'));
+    for (const { build, include } of BACKEND_MODULES) {
+        if (!(await exists(build))) problems.add(`${build}: missing although backend is on`);
+        if (!settings.includes(`"${include}"`)) problems.add(`settings.gradle.kts: ${include} not included`);
+    }
+    const sharedBuild = await readIfExists(path.join(projectPath, 'shared', 'build.gradle.kts'));
+    for (const dependency of BACKEND_SHARED_DEPENDENCIES) {
+        if (!new RegExp(`\\b${escapeRegExp(dependency)}(?![A-Za-z0-9.])`).test(sharedBuild)) {
+            problems.add(`shared/build.gradle.kts: ${dependency} not a dependency`);
+        }
+    }
+    const packagePath = input.packageName.replace(/\./g, '/');
+    const initKoinRel = `shared/src/commonMain/kotlin/${packagePath}/di/initKoin.kt`;
+    const initKoin = await readIfExists(path.join(projectPath, initKoinRel));
+    // Word match: a custom module named "auth" brings AuthPresentationModule, not AuthModule
+    for (const module of BACKEND_KOIN_MODULES) {
+        if (!new RegExp(`\\b${module}\\b`).test(initKoin)) problems.add(`${initKoinRel}: ${module} not registered`);
+    }
+    const plistRel = 'iosApp/iosApp/Info.plist';
+    if (!(await readIfExists(path.join(projectPath, plistRel))).includes(GOOGLE_URL_SCHEME)) {
+        problems.add(`${plistRel}: the $(GOOGLE_REVERSED_CLIENT_ID) URL scheme is missing`);
+    }
+}
+
 /**
  * Checks the generated project right before it is zipped; throws if anything is wrong (the request fails).
  * @param {string} projectPath
@@ -598,6 +663,9 @@ async function verifyGeneratedProject(projectPath, input) {
     // 13. Paywall: the template's own paywall, the first-launch call and the interstitial pacer
     await verifyPaywall(projectPath, input, packagePath, problems);
 
+    // 14. Backend: the server and its modules exactly when blank's backend flag is on, no residue otherwise
+    await verifyBackend(projectPath, input, input.featuresConfig || {}, problems);
+
     if (problems.size > 0) {
         // Cap the message: a badly broken generation (many unwired modules) can produce dozens of
         // lines, which is unreadable in an error response or a log line.
@@ -610,4 +678,4 @@ async function verifyGeneratedProject(projectPath, input) {
     }
 }
 
-module.exports = { verifyGeneratedProject };
+module.exports = { verifyGeneratedProject, verifyBackend };

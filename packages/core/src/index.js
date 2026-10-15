@@ -26,6 +26,7 @@ module.exports = {
     generationRecord: require('./generationRecord'),
     fileService: require('./fileService'),
     featureModules: require('./featureModules'),
+    backendOption: require('./backendOption'),
     TemplateCapabilityError: require('./featureModules').TemplateCapabilityError,
     verifyGeneratedProject: require('./generationVerifier').verifyGeneratedProject,
     validate: require('./validate').validate,

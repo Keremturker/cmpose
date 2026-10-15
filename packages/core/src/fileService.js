@@ -2,6 +2,7 @@ const fs = require('fs-extra');
 const path = require('path');
 const { listTextFiles } = require('./projectFiles');
 const { removeSwiftPackage } = require('./xcodePackages');
+const { stripPins } = require('./backendOption');
 const { capitalize, TEST_SOURCE_SET_REGEX } = require('./featureModules');
 const { removeMarkedBlock } = require('./readmeService');
 const { log } = require('./log');
@@ -76,7 +77,10 @@ const NOTES_MODULE = 'notes';
 const NOTES_LAYERS = ['contract', 'presentation'];
 const TEMPLATE_FEATURE_MODULES = {
     [MONETIZATION_MODULE]: (cfg) => cfg.purchases === true || cfg.ads === true,
-    [NOTES_MODULE]: (cfg) => cfg.room === true
+    [NOTES_MODULE]: (cfg) => cfg.room === true,
+    // The backend's sign-in gate (feature/account) and shared spaces (feature/sharing)
+    account: (cfg) => cfg.backend === true,
+    sharing: (cfg) => cfg.backend === true
 };
 
 // Deletes every test source set (src/*Test) of a Gradle module; a missing src/ is fine
@@ -231,6 +235,13 @@ function replaceInContent(content, oldPackage, newPackage, oldProject, newProjec
         updated = updated.replace(
             new RegExp(`applicationId\\s*=\\s*"${oldPackageEscaped}"`, 'g'),
             () => `applicationId = "${newPackage}"`
+        );
+
+        // Any other mention of the package as a whole name (the server's main class and logger names, a
+        // plugin id applied with id("..."), a KDoc link), bounded like the verifier's stale identifier rule
+        updated = updated.replace(
+            new RegExp(`(?<![A-Za-z0-9_.])${oldPackageEscaped}(?![A-Za-z0-9_])`, 'g'),
+            () => newPackage
         );
     }
 
@@ -1047,7 +1058,8 @@ function monitorResidueRules(packagePath) {
         // substring would be a false positive for a valid appName such as "Tools -lsqlite3" (see
         // above). Only an OTHER_LDFLAGS line that still links sqlite is residue.
         { file: ['iosApp', 'Configuration', 'Config.xcconfig'], tokens: [], patterns: [{ regex: /^\s*OTHER_LDFLAGS\s*=.*-lsqlite3/m, label: '-lsqlite3' }] },
-        { file: ['core', 'network', 'build.gradle.kts'], tokens: gradleTokens },
+        { file: ['core', 'network', 'src', 'commonMain', 'kotlin', packagePath, 'core', 'network', 'BackendClient.kt'], tokens: ['installNetworkMonitor'] },
+        { file: ['core', 'network', 'build.gradle.kts'], tokens: [...gradleTokens, '-lsqlite3'] },
         { file: ['androidApp', 'build.gradle.kts'], tokens: gradleTokens }
     ];
 }
@@ -1162,6 +1174,8 @@ const ROOM_PLUGIN_ALIAS = /\balias\(libs\.plugins\.room\)/;
 // .git, removeSwiftPackage matches it either way
 const GMA_PACKAGE_URL = 'https://github.com/googleads/swift-package-manager-google-mobile-ads';
 const PACKAGE_RESOLVED = ['iosApp', 'iosApp.xcodeproj', 'project.xcworkspace', 'xcshareddata', 'swiftpm', 'Package.resolved'];
+// The pins the GMA package brings into Package.resolved (the Google Mobile Ads SDK and UMP)
+const ADS_PIN_IDENTITIES = new Set(['swift-package-manager-google-mobile-ads', 'swift-package-manager-google-user-messaging-platform']);
 
 const PLIST = new Set(['.plist']);
 const XML = new Set(['.xml']);
@@ -1234,8 +1248,7 @@ const MONETIZATION_RESIDUE_FILES = {
     purchases: () => [],
     ads: (packagePath) => [
         path.join('shared', 'src', 'iosMain', 'kotlin', packagePath, 'AdsBridgeRegistration.kt'),
-        path.join('iosApp', 'iosApp', 'AdsBridge.swift'),
-        path.join(...PACKAGE_RESOLVED)
+        path.join('iosApp', 'iosApp', 'AdsBridge.swift')
     ],
     monetization: () => []
 };
@@ -1256,6 +1269,34 @@ const ROOM_RESIDUE_TOKENS = [
     classToken('NotesPresentationModule', /\bNotesPresentationModule\b/), classToken('NotesDestination')
 ];
 const ROOM_RESIDUE_FILES = () => [path.join('core', 'room'), path.join('feature', 'notes')];
+
+// Backend off (applyBackendOption): the tokens the backend's parts must leave nowhere. Bounded like the
+// module references above, so a custom module (api, auth, account2, ...) never matches; the user's
+// package and a custom module's own class names are masked by scanForResidue. Markup and the Xcode
+// project are looked at only where user input cannot spell the token.
+const BACKEND_CODE_EXTENSIONS = new Set(['.kt', '.kts', '.toml', '.swift', '.properties']);
+const BACKEND_IOS_EXTENSIONS = new Set([...BACKEND_CODE_EXTENSIONS, '.pbxproj']);
+const code = (regex, label, extensions = BACKEND_CODE_EXTENSIONS) => ({ regex, label, extensions });
+const BACKEND_RESIDUE_TOKENS = [
+    code(/\bcore\.auth(?![A-Za-z0-9_])/, 'core.auth'),
+    code(/\bcore\.api(?![A-Za-z0-9_])/, 'core.api'),
+    code(/\bBACKEND_CLIENT\b/, 'BACKEND_CLIENT'),
+    code(/\bFirebaseAuth\b/, 'FirebaseAuth', BACKEND_IOS_EXTENSIONS),
+    code(/\bFirebaseCore\b/, 'FirebaseCore', BACKEND_IOS_EXTENSIONS),
+    code(/\bGoogleSignIn\b/, 'GoogleSignIn', BACKEND_IOS_EXTENSIONS),
+    code(/\bgoogle-services\b/, 'google-services'),
+    code(/\bgoogleServices\b/, 'googleServices'),
+    code(/\bLOCAL_SERVER\b/, 'LOCAL_SERVER', BACKEND_IOS_EXTENSIONS),
+    code(/^\s*#if LOCAL_SERVER\b/m, 'LOCAL_SERVER', PLIST),
+    code(/com\.apple\.developer\.applesignin/, 'applesignin', new Set([...BACKEND_IOS_EXTENSIONS, '.plist'])),
+    { ...classToken('rememberSessionStart', /\brememberSessionStart\b/), extensions: BACKEND_CODE_EXTENSIONS },
+    { ...classToken('registerSignInBridge', /\bregisterSignInBridge\b/), extensions: BACKEND_CODE_EXTENSIONS },
+    // Any marker the template left (block and swap markers); the privacy manifest's block is
+    // writePrivacyManifest's, after this check
+    code(/cmpose:backend/, 'cmpose:backend', new Set([...BACKEND_IOS_EXTENSIONS, '.xcconfig', '.plist', '.xml', '.md']))
+];
+const BACKEND_RESIDUE_FILES = () => ['server', path.join('core', 'api'), path.join('core', 'auth'),
+    path.join('feature', 'account'), path.join('feature', 'sharing')];
 
 // Whether a MONETIZATION_RESIDUE_TOKENS key is off (monetization = purchases and ads both off)
 function monetizationKeyOff(config, key) {
@@ -1344,7 +1385,8 @@ async function assertNoMonetizationResidue(projectPath, packageName, config) {
     if (tokens.length === 0) return;
     const packagePath = packageName.replace(/\./g, '/');
     const files = offKeys.flatMap((key) => MONETIZATION_RESIDUE_FILES[key](packagePath));
-    await scanForResidue(projectPath, packageName, { tokens, files, title: 'Monetization residue after removal' });
+    const pins = offKeys.includes('ads') ? ADS_PIN_IDENTITIES : null;
+    await scanForResidue(projectPath, packageName, { tokens, files, pins, title: 'Monetization residue after removal' });
 }
 
 // Room off: nothing of core/room or feature/notes is left (see ROOM_RESIDUE_TOKENS)
@@ -1357,12 +1399,37 @@ async function assertNoRoomResidue(projectPath, packageName, config) {
     });
 }
 
+// Backend off: nothing of the backend is left (see BACKEND_RESIDUE_TOKENS)
+async function assertNoBackendResidue(projectPath, packageName, config) {
+    if (config.backend === true) return;
+    await scanForResidue(projectPath, packageName, {
+        tokens: BACKEND_RESIDUE_TOKENS,
+        files: BACKEND_RESIDUE_FILES(),
+        title: 'Backend residue after removal'
+    });
+}
+
 // Fails with `title` and a file: label list when a path in `files` (relative to the project) is still
 // there or a token is in a file it is looked for in (user input and the user's own package masked)
-async function scanForResidue(projectPath, packageName, { tokens, files: residueFiles, title }) {
+async function scanForResidue(projectPath, packageName, { tokens, files, pins, title }) {
+    const problems = await findResidue(projectPath, packageName, { tokens, files, pins });
+    if (problems.length > 0) {
+        throw new Error(`${title}:\n  ${problems.join('\n  ')}`);
+    }
+}
+
+// scanForResidue's problems as a `file: label` list (the verifier collects them); `pins`: identities
+// Package.resolved, if there, must no longer pin
+async function findResidue(projectPath, packageName, { tokens, files: residueFiles, pins = null }) {
     const problems = [];
     for (const rel of residueFiles) {
         if (await fs.pathExists(path.join(projectPath, rel))) problems.push(`${rel}: file still present`);
+    }
+    const resolvedPath = path.join(projectPath, ...PACKAGE_RESOLVED);
+    if (pins && (await fs.pathExists(resolvedPath))) {
+        for (const pin of JSON.parse(await fs.readFile(resolvedPath, 'utf8')).pins || []) {
+            if (pins.has(pin.identity)) problems.push(`${path.join(...PACKAGE_RESOLVED)}: ${pin.identity} pin`);
+        }
     }
 
     const scanned = new Set(tokens.flatMap((token) => [...tokenExtensions(token)]));
@@ -1400,10 +1467,7 @@ async function scanForResidue(projectPath, packageName, { tokens, files: residue
             }
         }
     }
-
-    if (problems.length > 0) {
-        throw new Error(`${title}:\n  ${problems.join('\n  ')}`);
-    }
+    return problems;
 }
 
 async function processCoreFeatures(projectPath, config, packageName) {
@@ -1477,6 +1541,25 @@ async function processCoreFeatures(projectPath, config, packageName) {
 
             await fs.writeFile(networkModulePath, content);
             log.info('✅ Cleaned NetworkModule.kt');
+        }
+
+        // 3a. Backend on: the backend's client records its calls in debug builds too, and core/network's iOS
+        // test executable links the system SQLite only for the monitor
+        const backendClientPath = path.join(projectPath, 'core', 'network', 'src', 'commonMain', 'kotlin', packagePath, 'core', 'network', 'BackendClient.kt');
+        if (await fs.pathExists(backendClientPath)) {
+            let content = await fs.readFile(backendClientPath, 'utf8');
+            content = content.split('\n').filter((line) => {
+                const t = line.trim();
+                return t !== 'if (isDebug) installNetworkMonitor()' && !t.startsWith('// Debug builds only, like the request log: the monitor');
+            }).join('\n');
+            content = content.replace(/\n[ \t]*\n([ \t]*\})/g, '\n$1');
+            await fs.writeFile(backendClientPath, content);
+        }
+        const networkGradlePath = path.join(projectPath, 'core', 'network', 'build.gradle.kts');
+        if (await fs.pathExists(networkGradlePath)) {
+            const content = await fs.readFile(networkGradlePath, 'utf8');
+            const cleaned = content.replace(/\n*\/\/ The backend client \(BackendClient\.kt\) keeps the network monitor[^\n]*\n\/\/[^\n]*\nkotlin\.targets\.withType<[^\n]*KotlinNativeTarget>\(\)\.configureEach \{\n[^\n]*TestExecutable>\(\)\.configureEach \{\n\s*linkerOpts\("-lsqlite3"\)\n\s*\}\n\}/, '');
+            if (cleaned !== content) await fs.writeFile(networkGradlePath, cleaned);
         }
 
         // 3b. Current template: remove the monitor helper files
@@ -1596,7 +1679,8 @@ async function processCoreFeatures(projectPath, config, packageName) {
         // permission stays while a monetization flag is on.
         const manifestPath = path.join(projectPath, 'androidApp', 'src', 'main', 'AndroidManifest.xml');
         const monetizationNeedsInternet = config.purchases === true || config.ads === true;
-        if (!monetizationNeedsInternet) {
+        // backend implies network, so this is the network block's own guard should that rule change
+        if (!monetizationNeedsInternet && config.backend !== true) {
             await dropLines(manifestPath, (line) =>
                 /<uses-permission android:name="android\.permission\.INTERNET"\s*\/>/.test(line));
         }
@@ -1929,14 +2013,19 @@ async function processCoreFeatures(projectPath, config, packageName) {
         await rewriteIfExists(path.join(projectPath, 'androidApp', 'src', 'main', 'AndroidManifest.xml'), stripAdsManifest);
         await rewriteIfExists(path.join(projectPath, 'iosApp', 'iosApp', 'Info.plist'), stripAdsInfoPlist);
 
-        // 5. The Google Mobile Ads Swift package. Package.resolved pins only GMA and UMP, so it goes
-        // as a whole (Xcode writes a new one if the user adds a package), with the swiftpm/ and
-        // xcshareddata/ directories it leaves empty.
+        // 5. The Google Mobile Ads Swift package. Package.resolved loses the GMA and UMP pins (the
+        // backend's stay); with no pin left it goes as a whole (Xcode writes a new one if the user adds a
+        // package), with the swiftpm/ and xcshareddata/ directories it leaves empty.
         await rewriteIfExists(
             path.join(projectPath, 'iosApp', 'iosApp.xcodeproj', 'project.pbxproj'),
             (content) => removeSwiftPackage(content, GMA_PACKAGE_URL)
         );
-        await fs.remove(path.join(projectPath, ...PACKAGE_RESOLVED));
+        const resolvedPath = path.join(projectPath, ...PACKAGE_RESOLVED);
+        if (await fs.pathExists(resolvedPath)) {
+            const stripped = stripPins(await fs.readFile(resolvedPath, 'utf8'), ADS_PIN_IDENTITIES);
+            if (stripped === null) await fs.remove(resolvedPath);
+            else await fs.writeFile(resolvedPath, stripped);
+        }
         for (const depth of [1, 2]) {
             const emptied = path.join(projectPath, ...PACKAGE_RESOLVED.slice(0, -depth));
             if ((await fs.pathExists(emptied)) && (await fs.readdir(emptied)).length === 0) await fs.remove(emptied);
@@ -2035,6 +2124,8 @@ async function processCoreFeatures(projectPath, config, packageName) {
     await assertNoMonetizationResidue(projectPath, packageName, config);
     // Room residue check, at the same point and for the same reason
     await assertNoRoomResidue(projectPath, packageName, config);
+    // Backend residue check (applyBackendOption removed it on the template package), likewise
+    await assertNoBackendResidue(projectPath, packageName, config);
 
     // --- Detekt Removal Logic ---
     if (config.detekt !== true) {
@@ -2094,6 +2185,20 @@ async function processCoreFeatures(projectPath, config, packageName) {
                     }
                 }
             }
+        }
+
+        // 6. Modules outside the convention plugins that apply it by id (core/api and the server: the
+        // backend's JVM-capable modules)
+        const detektPluginLine = `id("${packageName}.detekt")`;
+        for (const moduleDir of [path.join(projectPath, 'core', 'api'), path.join(projectPath, 'server')]) {
+            await dropLines(path.join(moduleDir, 'build.gradle.kts'), (line) => line.trim() === detektPluginLine);
+        }
+        // The server also points detekt at its local runner's sources
+        const serverGradle = path.join(projectPath, 'server', 'build.gradle.kts');
+        if (await fs.pathExists(serverGradle)) {
+            const content = await fs.readFile(serverGradle, 'utf8');
+            const cleaned = content.replace(/(?:^|\n)(?:\/\/[^\n]*\n)?detekt \{ source\.from\("src\/local\/kotlin"\) \}\n(?:[ \t]*\n)?/, '\n');
+            if (cleaned !== content) await fs.writeFile(serverGradle, cleaned);
         }
 
         // The CI workflow's detekt step would fail without the plugin
@@ -2168,6 +2273,9 @@ module.exports = {
     assertNoNetworkResidue,
     assertNoMonetizationResidue,
     assertNoRoomResidue,
+    assertNoBackendResidue,
+    findResidue,
+    BACKEND_RESIDUE_TOKENS,
     processCoreFeatures,
     sortImportsLikeKtlint,
     sortKotlinImports

@@ -6,7 +6,7 @@ const fs = require('fs-extra');
 
 const {
     removeMarkedBlocks, applySwapMarkers, stripBackendPbxproj, stripBackendPins, applyBackendOption,
-    BACKEND_PATHS, BACKEND_ONLY_IMPORTS
+    BACKEND_PATHS, BACKEND_ONLY_IMPORTS, BACKEND_PIN_IDENTITIES
 } = require('../src/backendOption');
 
 const FIXTURES = path.join(__dirname, 'fixtures', 'backend');
@@ -153,6 +153,13 @@ test('stripBackendPins returns null for a Firebase-only file', () => {
     resolved.pins = resolved.pins.filter((pin) => ['firebase-ios-sdk', 'googlesignin-ios', 'gtm-session-fetcher'].includes(pin.identity));
     assert.equal(resolved.pins.length, 3);
     assert.equal(stripBackendPins(JSON.stringify(resolved, null, 2)), null);
+});
+
+test('stripBackendPins leaves a file without backend pins as it is (originHash kept)', () => {
+    const resolved = JSON.parse(read('Package.resolved'));
+    resolved.pins = resolved.pins.filter((pin) => !BACKEND_PIN_IDENTITIES.has(pin.identity));
+    const json = `${JSON.stringify({ originHash: 'abc', ...resolved }, null, 2).replace(/^(\s*"[^"]*"): /gm, '$1 : ')}\n`;
+    assert.equal(stripBackendPins(json), json);
 });
 
 test('BACKEND_ONLY_IMPORTS matches the backend modules\' imports only', () => {

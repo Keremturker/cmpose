@@ -15,6 +15,7 @@ const {
     updateiOSConfigFiles
 } = require('../src/fileService');
 const { applyBlankShell, cloneFeatureModules } = require('../src/featureModules');
+const { applyBackendOption } = require('../src/backendOption');
 const CONFIG = { oldPackageName: require('../src/templateIdentity').OLD_PACKAGE_NAME, oldProjectName: require('../src/templateIdentity').OLD_PROJECT_NAME };
 
 // Real template: a checkout named by CMP_REAL_TEMPLATE_DIR; skipped when it is unset or absent
@@ -148,9 +149,17 @@ test('sortKotlinImports leaves the real template (package com.kturker.multiplatf
     });
 });
 
-// The hosted generator's order: shell, modules, rename, move, blank, wire, iOS, then the import pass
+// What the template's sync (updateTemplate) keeps out of the template: an upstream archive still has them
+const MAINTAINER_ONLY = ['gradle/wizard.gradle.kts', 'MAINTAINING.md', 'scripts/ios-add-packages.rb', 'scripts-maintainer'];
+const templateFiles = (src) => {
+    const rel = path.relative(REAL, src).split(path.sep).join('/');
+    return path.basename(src) !== '.git' && !MAINTAINER_ONLY.some((excluded) => rel === excluded || rel.startsWith(`${excluded}/`));
+};
+
+// The hosted generator's order: shell, backend, modules, rename, move, blank, wire, iOS, then the import pass
 async function generateLikeController(dir, { packageName, templateType, features, featuresConfig }) {
     await applyBlankShell(dir, templateType, featuresConfig);
+    await applyBackendOption(dir, templateType === 'blank' && featuresConfig.backend === true);
     await cloneFeatureModules(dir, features);
     await processAllFiles(dir, CONFIG.oldPackageName, packageName, CONFIG.oldProjectName, 'Sorted', 'Sorted App',
         { minSdk: '24', iosVersion: '15.0' });
@@ -172,7 +181,7 @@ for (const packageName of ['org.example.app', 'tr.com.example.app']) {
             t.mock.method(console, 'log', () => { });
             t.mock.method(console, 'warn', () => { });
             await withTempDir(async (dir) => {
-                await fs.copy(REAL, dir, { filter: (src) => path.basename(src) !== '.git' });
+                await fs.copy(REAL, dir, { filter: templateFiles });
                 await generateLikeController(dir, { packageName, templateType, features, featuresConfig });
 
                 await sortKotlinImports(dir);

@@ -172,15 +172,22 @@ function removeCopyGoogleServicePhase(content) {
         .replace(/\n\n\/\* Begin (\w+) section \*\/\n\/\* End \1 section \*\/(?=\n)/g, '');
 }
 
-// Off: Package.resolved without the backend's pins, in Xcode's layout ("key" : value). originHash goes
-// (Xcode recomputes it); null when no pin is left, so the caller deletes the file.
-function stripBackendPins(json) {
+// Package.resolved without the pins whose identity is in `identities`, in Xcode's layout ("key" : value).
+// originHash goes (Xcode recomputes it); null when no pin is left, so the caller deletes the file.
+function stripPins(json, identities) {
     const resolved = JSON.parse(json);
-    const pins = (resolved.pins || []).filter((pin) => !BACKEND_PIN_IDENTITIES.has(pin.identity));
+    const pins = (resolved.pins || []).filter((pin) => !identities.has(pin.identity));
     if (pins.length === 0) return null;
+    // Nothing to drop: the file stays as Xcode wrote it (originHash included)
+    if (pins.length === (resolved.pins || []).length) return json;
     const { originHash, ...rest } = resolved;
     const text = JSON.stringify({ ...rest, pins }, null, 2).replace(/^(\s*"(?:[^"\\]|\\.)*"): /gm, '$1 : ');
     return `${text}\n`;
+}
+
+// Off: Package.resolved without the backend's pins
+function stripBackendPins(json) {
+    return stripPins(json, BACKEND_PIN_IDENTITIES);
 }
 
 function kindOf(file) {
@@ -269,6 +276,7 @@ module.exports = {
     applySwapMarkers,
     stripBackendPbxproj,
     stripBackendPins,
+    stripPins,
     applyBackendOption,
     BACKEND_PATHS,
     BACKEND_ONLY_IMPORTS,

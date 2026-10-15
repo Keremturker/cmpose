@@ -4,7 +4,7 @@ const os = require('os');
 const path = require('path');
 const fs = require('fs-extra');
 
-const { verifyGeneratedProject } = require('../src/generationVerifier');
+const { verifyGeneratedProject, verifyBackend } = require('../src/generationVerifier');
 
 const INPUT = { projectName: 'Demo', appName: 'Demo App', packageName: 'dev.cmpose.demo', templateType: 'blank', features: [] };
 const PKG = 'dev/cmpose/demo';
@@ -1305,4 +1305,138 @@ test('blank paywall: a pre-paywall template (no PurchaseResult.kt, no Interstiti
         await seedMonetization(dir, true, true);
         await verifyGeneratedProject(dir, MONETIZATION(true, true));
     });
+});
+
+// Backend (featuresConfig.backend): blank keeps the server and the backend's modules exactly when it is on
+const BACKEND_INPUT = (backend) => ({ ...INPUT, featuresConfig: { theming: false, multiLang: backend, backend } });
+const BACKEND_PLIST = '<key>CFBundleURLSchemes</key>\n<array>\n<string>demo</string>\n</array>\n'
+    + '<key>CFBundleURLSchemes</key>\n<array>\n<string>$(GOOGLE_REVERSED_CLIENT_ID)</string>\n</array>\n';
+const BACKEND_BUILD_FILES = ['server', 'core/api', 'core/auth', 'feature/account/contract', 'feature/account/presentation',
+    'feature/sharing/contract', 'feature/sharing/presentation'].map((dir) => `${dir}/build.gradle.kts`);
+
+async function seedBackend(dir) {
+    await seedValid(dir);
+    const files = {
+        'settings.gradle.kts': 'rootProject.name = "Demo"\ninclude(":shared")\ninclude(":core:api")\ninclude(":core:auth")\n'
+            + 'include(":feature:account:contract")\ninclude(":feature:account:presentation")\n'
+            + 'include(":feature:sharing:contract")\ninclude(":feature:sharing:presentation")\ninclude(":server")\n',
+        'shared/build.gradle.kts': 'implementation(projects.core.auth)\nimplementation(projects.feature.account.presentation)\n'
+            + 'implementation(projects.feature.sharing.presentation)\n',
+        [INIT_KOIN]: 'add(AuthModule().module)\nadd(AccountModule().module)\nadd(SharingModule().module)\n',
+        [INFO_PLIST]: BACKEND_PLIST
+    };
+    for (const rel of BACKEND_BUILD_FILES) files[rel] = 'plugins { }\n';
+    for (const [rel, content] of Object.entries(files)) await fs.outputFile(path.join(dir, rel), content);
+}
+
+async function backendProblems(dir, input) {
+    const problems = new Set();
+    await verifyBackend(dir, input, input.featuresConfig || {}, problems);
+    return [...problems];
+}
+
+test('blank backend=true: a complete backend project passes (backend)', async () => {
+    await withProject(async (dir) => {
+        await seedBackend(dir);
+        assert.deepEqual(await backendProblems(dir, BACKEND_INPUT(true)), []);
+    });
+});
+
+test('blank backend=true: a missing server/build.gradle.kts, include or registration is rejected (backend)', async () => {
+    await withProject(async (dir) => {
+        await seedBackend(dir);
+        await fs.remove(path.join(dir, 'server', 'build.gradle.kts'));
+        await fs.outputFile(path.join(dir, INIT_KOIN), 'add(AuthModule().module)\nadd(AccountModule().module)\n');
+        const settings = path.join(dir, 'settings.gradle.kts');
+        await fs.writeFile(settings, (await fs.readFile(settings, 'utf8')).replace('include(":core:api")\n', ''));
+        const problems = await backendProblems(dir, BACKEND_INPUT(true));
+        assert.ok(problems.includes('server/build.gradle.kts: missing although backend is on'), problems.join('\n'));
+        assert.ok(problems.includes('settings.gradle.kts: :core:api not included'), problems.join('\n'));
+        assert.ok(problems.includes(`${INIT_KOIN}: SharingModule not registered`), problems.join('\n'));
+    });
+});
+
+test('blank backend=true: Info.plist without $(GOOGLE_REVERSED_CLIENT_ID) is rejected (backend)', async () => {
+    await withProject(async (dir) => {
+        await seedBackend(dir);
+        await fs.outputFile(path.join(dir, INFO_PLIST), BACKEND_PLIST.replace('$(GOOGLE_REVERSED_CLIENT_ID)', 'com.googleusercontent.apps.x'));
+        assert.deepEqual(await backendProblems(dir, BACKEND_INPUT(true)),
+            [`${INFO_PLIST}: the $(GOOGLE_REVERSED_CLIENT_ID) URL scheme is missing`]);
+    });
+});
+
+test('a cmpose:backend marker left in a backend project is rejected (backend)', async () => {
+    await withProject(async (dir) => {
+        await seedBackend(dir);
+        await fs.appendFile(path.join(dir, 'shared', 'build.gradle.kts'), '// cmpose:backend\n');
+        assert.deepEqual(await backendProblems(dir, BACKEND_INPUT(true)), ['shared/build.gradle.kts: cmpose:backend marker left']);
+    });
+});
+
+test('blank backend=false: a leftover core/auth and its references are rejected (backend)', async () => {
+    await withProject(async (dir) => {
+        await seedValid(dir);
+        assert.deepEqual(await backendProblems(dir, BACKEND_INPUT(false)), []);
+        await fs.outputFile(path.join(dir, 'core', 'auth', 'build.gradle.kts'), 'plugins { }\n');
+        await fs.outputFile(path.join(dir, INIT_KOIN), `import ${INPUT.packageName}.core.auth.AuthModule\n`);
+        const problems = await backendProblems(dir, BACKEND_INPUT(false));
+        assert.ok(problems.includes('core/auth: present although backend is off'), problems.join('\n'));
+        assert.ok(problems.includes(`${INIT_KOIN}: core.auth`), problems.join('\n'));
+        // Through the whole verifier too
+        await assert.rejects(verifyGeneratedProject(dir, BACKEND_INPUT(false)), /core\/auth: present although backend is off/);
+    });
+});
+
+test('backend off: Firebase in the Xcode project, google-services or BACKEND_CLIENT is rejected; showcase too (backend)', async () => {
+    for (const input of [BACKEND_INPUT(false), { ...INPUT, templateType: 'showcase' }]) {
+        await withProject(async (dir) => {
+            await seedValid(dir, input);
+            await fs.outputFile(path.join(dir, 'iosApp/iosApp.xcodeproj/project.pbxproj'),
+                'repositoryURL = "https://github.com/firebase/firebase-ios-sdk";\nproductName = FirebaseAuth;\n');
+            await fs.outputFile(path.join(dir, 'androidApp/build.gradle.kts'), 'plugins { alias(libs.plugins.googleServices) }\n');
+            await fs.outputFile(path.join(dir, `core/network/src/commonMain/kotlin/${PKG}/core/network/Client.kt`),
+                `package ${INPUT.packageName}.core.network\nval c = BACKEND_CLIENT\n`);
+            await fs.outputFile(path.join(dir, 'server/build.gradle.kts'), 'plugins { }\n');
+            const problems = await backendProblems(dir, input);
+            const where = input.templateType === 'showcase' ? 'in a showcase project' : 'although backend is off';
+            for (const expected of [
+                'iosApp/iosApp.xcodeproj/project.pbxproj: FirebaseAuth',
+                'androidApp/build.gradle.kts: googleServices',
+                `core/network/src/commonMain/kotlin/${PKG}/core/network/Client.kt: BACKEND_CLIENT`,
+                `server: present ${where}`
+            ]) assert.ok(problems.includes(expected), `${expected} in\n${problems.join('\n')}`);
+        });
+    }
+});
+
+test('a custom module named api or auth is not backend residue (backend)', async () => {
+    await withProject(async (dir) => {
+        const input = { ...BACKEND_INPUT(false), features: ['api', 'auth'] };
+        await seedValid(dir, input, ['api', 'auth']);
+        await fs.outputFile(path.join(dir, `feature/auth/presentation/src/commonMain/kotlin/${PKG}/feature/auth/presentation/AuthEntry.kt`),
+            `package ${INPUT.packageName}.feature.auth.presentation\nimport ${INPUT.packageName}.feature.api.contract.ApiDestination\n`);
+        assert.deepEqual(await backendProblems(dir, input), []);
+    });
+});
+
+test('the privacy manifest declares the account data exactly when backend is on (backend)', async () => {
+    const manifest = (backend) => '<dict>\n<string>NSPrivacyAccessedAPICategoryUserDefaults</string>\n'
+        + (backend ? '<string>NSPrivacyCollectedDataTypeEmailAddress</string>\n' : '') + '</dict>\n';
+    const cases = [[false, false, null], [true, true, null], [false, true, 'account data declared although backend is off'],
+        [true, false, 'account data not declared although backend is on']];
+    for (const [backend, declared, expected] of cases) {
+        await withProject(async (dir) => {
+            await (backend ? seedBackend(dir) : seedValid(dir));
+            await fs.outputFile(path.join(dir, 'core/about/build.gradle.kts'), 'plugins { }\n');
+            await fs.appendFile(path.join(dir, 'settings.gradle.kts'), 'include(":core:about")\n');
+            await fs.appendFile(path.join(dir, INIT_KOIN), 'add(AboutModule().module)\n');
+            await fs.outputFile(path.join(dir, 'iosApp/iosApp/PrivacyInfo.xcprivacy'), manifest(declared));
+            const input = { ...INPUT, featuresConfig: { theming: false, multiLang: false, backend } };
+            if (expected) {
+                await assert.rejects(verifyGeneratedProject(dir, input), new RegExp(`PrivacyInfo.xcprivacy: ${expected}`));
+            } else {
+                await verifyGeneratedProject(dir, input);
+            }
+        });
+    }
 });

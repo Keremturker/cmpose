@@ -147,11 +147,10 @@ async function applyBlankShell(projectPath, templateType, featuresConfig = {}) {
     await fs.remove(overlay);
 }
 
-// What a blank project's purchases/ads flags need from the template. A template pinned before
-// the monetization release has none of it; generation then stops before the pipeline runs with a
-// 500 that names the missing modules (not the generic verifier 500 after it; not 503, which the
-// contract reserves for the concurrency limit that clients retry), and a readiness check reports the
-// cache as stale.
+// What a blank project's on flags need from the template. A template pinned before the release that
+// brought them has none of it; generation then stops before the pipeline runs with a 500 that names the
+// missing directories (not the generic verifier 500 after it; not 503, which the contract reserves for the
+// concurrency limit that clients retry).
 const MONETIZATION_LAYER = BLANK_LAYERS.find((layer) => layer.name === 'ads-without-purchases');
 const MONETIZATION_CAPABILITIES = [
     { dir: 'core/purchases', needed: (cfg) => cfg.purchases === true },
@@ -159,6 +158,10 @@ const MONETIZATION_CAPABILITIES = [
     { dir: 'feature/monetization', needed: (cfg) => cfg.purchases === true || cfg.ads === true },
     { dir: `${BLANK_OVERLAY_DIR}/${LAYERS_DIR}/${MONETIZATION_LAYER.name}`, needed: MONETIZATION_LAYER.applies }
 ];
+// Checked per request only: a readiness check (no config) does not need them, so a template pinned
+// before the backend release still serves every other option
+const BACKEND_CAPABILITIES = ['server', 'core/api', 'core/auth', 'feature/account', 'feature/sharing']
+    .map((dir) => ({ dir, needed: (cfg) => cfg.backend === true }));
 
 class TemplateCapabilityError extends Error {
     constructor(missing) {
@@ -170,15 +173,15 @@ class TemplateCapabilityError extends Error {
 }
 
 function templateLacksMessage(missing) {
-    return `Template lacks the monetization modules (missing: ${missing.join(', ')}); update templateRef`;
+    return `Template lacks ${missing.join(', ')} (older than the release that added them); update templateRef`;
 }
 
-// Every monetization directory the template at `templatePath` lacks (for a readiness check: any of them
-// means the cache is stale)
+// Every directory the template at `templatePath` lacks for `cfg`'s on flags; without a config (a readiness
+// check: any of them means the cache is stale), every monetization directory
 async function missingTemplateCapabilities(templatePath, cfg = null) {
+    const capabilities = cfg ? [...MONETIZATION_CAPABILITIES, ...BACKEND_CAPABILITIES].filter((c) => c.needed(cfg)) : MONETIZATION_CAPABILITIES;
     const missing = [];
-    for (const capability of MONETIZATION_CAPABILITIES) {
-        if (cfg && !capability.needed(cfg)) continue;
+    for (const capability of capabilities) {
         if (!(await fs.pathExists(path.join(templatePath, capability.dir)))) missing.push(capability.dir);
     }
     return missing;

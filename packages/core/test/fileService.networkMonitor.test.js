@@ -437,3 +437,59 @@ test('processAllFiles fails when a file cannot be rewritten instead of skipping 
         }
     });
 });
+
+// Backend on: the backend's own client (BackendClient.kt) records its calls with the monitor in debug builds, and
+// core/network's iOS test executable links SQLite only for the monitor; inspector off removes both
+const BACKEND_NATIVE_BLOCK = '\n\n// The backend client (BackendClient.kt) keeps the network monitor, which stores calls through SQLiter and so\n' +
+    '// the system SQLite. The app\'s link brings it in; this module\'s iOS test executable has to ask for it.\n' +
+    'kotlin.targets.withType<org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget>().configureEach {\n' +
+    '    binaries.withType<org.jetbrains.kotlin.gradle.plugin.mpp.TestExecutable>().configureEach {\n' +
+    '        linkerOpts("-lsqlite3")\n' +
+    '    }\n' +
+    '}';
+
+async function placeBackendClient(dir, placed) {
+    const pkgPath = NEW_PACKAGE.replace(/\./g, '/');
+    const client = path.join(dir, 'core', 'network', 'src', 'commonMain', 'kotlin', pkgPath, 'core', 'network', 'BackendClient.kt');
+    const input = (await fs.readFile(path.join(FIXTURES, 'backend', 'BackendClient.kt'), 'utf8')).split(TEMPLATE_PACKAGE).join(NEW_PACKAGE);
+    await fs.outputFile(client, input);
+    const gradle = placed['core-network.build.gradle.kts'];
+    await fs.writeFile(gradle.path, gradle.input.replace(/\n*$/, '') + BACKEND_NATIVE_BLOCK);
+    return client;
+}
+
+test('backend on, inspector off: the backend client and the native test link drop the monitor', async (t) => {
+    t.mock.method(console, 'log', () => { });
+    await withTempDir(async (dir) => {
+        const placed = await placeShape(dir, 'new');
+        const client = await placeBackendClient(dir, placed);
+        await processBlankApp(dir, NEW_PACKAGE, [], { ...INSPECTOR_OFF, backend: true });
+        const clientOut = await fs.readFile(client, 'utf8');
+        assert.ok(!clientOut.includes('installNetworkMonitor') && !clientOut.includes('the monitor records'), clientOut);
+        assert.ok(clientOut.includes('installRequestLogging(isDebug = isDebug)') && clientOut.includes('install(Auth)'), clientOut);
+        assert.ok(/installRequestLogging\(isDebug = isDebug\)\n {4}\}\n\}/.test(clientOut), clientOut);
+        const gradleOut = await read(placed['core-network.build.gradle.kts']);
+        assert.ok(!gradleOut.includes('-lsqlite3') && !gradleOut.includes('KotlinNativeTarget'), gradleOut);
+        await assertNoNetworkMonitorResidue(dir, NEW_PACKAGE);
+    });
+});
+
+test('backend on, inspector on: the backend client keeps the monitor', async (t) => {
+    t.mock.method(console, 'log', () => { });
+    await withTempDir(async (dir) => {
+        const placed = await placeShape(dir, 'new');
+        const client = await placeBackendClient(dir, placed);
+        await processBlankApp(dir, NEW_PACKAGE, [], { ...INSPECTOR_ON, backend: true });
+        assert.ok((await fs.readFile(client, 'utf8')).includes('if (isDebug) installNetworkMonitor()'));
+        assert.ok((await read(placed['core-network.build.gradle.kts'])).includes('linkerOpts("-lsqlite3")'));
+    });
+});
+
+test('a monitor call left in the backend client is residue', async (t) => {
+    t.mock.method(console, 'log', () => { });
+    await withTempDir(async (dir) => {
+        const placed = await placeShape(dir, 'new');
+        await placeBackendClient(dir, placed);
+        await assert.rejects(assertNoNetworkMonitorResidue(dir, NEW_PACKAGE), /BackendClient\.kt: installNetworkMonitor/);
+    });
+});

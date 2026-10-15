@@ -10,6 +10,7 @@ const {
 } = require('./fileService');
 const { applyBlankShell, cloneFeatureModules, assertTemplateCapabilities } = require('./featureModules');
 const { applyCiOption } = require('./ciOption');
+const { applyBackendOption } = require('./backendOption');
 const { writePrivacyManifest } = require('./privacyManifest');
 const { fillReadme } = require('./readmeService');
 const { buildGenerationRecord, writeGenerationRecord } = require('./generationRecord');
@@ -22,7 +23,7 @@ async function generateCmpProject(value, { projectDir, generatorVersion = null }
     const { projectName, appName, packageName, templateType, features, featuresConfig, ci, minSdk, iosVersion } = value;
     const blankConfig = templateType === 'blank' ? featuresConfig : null;
 
-    // An older template without the monetization modules stops here, naming what is missing
+    // An older template without the modules an on flag needs stops here, naming what is missing
     await assertTemplateCapabilities(projectDir, templateType, featuresConfig);
 
     // The template's own versions (SDK levels for the log, the README's requirements table)
@@ -52,6 +53,8 @@ async function generateCmpProject(value, { projectDir, generatorVersion = null }
     // blank's shell and every requested module come from the template, applied on the
     // template's own package before the rename below
     await applyBlankShell(projectDir, templateType, featuresConfig);
+    // The backend's parts stay (markers dropped) for blank with backend on; everywhere else they go
+    await applyBackendOption(projectDir, templateType === 'blank' && featuresConfig.backend === true);
     await cloneFeatureModules(projectDir, sanitizedFeatures);
     log.info(`✅ Template skeleton ready (${sanitizedFeatures.length} feature modules)`);
 

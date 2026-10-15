@@ -891,7 +891,7 @@ test('assertNoMonetizationResidue reports leftover ads files and platform keys',
             for (const expected of [
                 `${path.normalize(ADS_BRIDGE_REGISTRATION)}: file still present`,
                 `${path.normalize('iosApp/iosApp/AdsBridge.swift')}: file still present`,
-                `${path.normalize(PACKAGE_RESOLVED)}: file still present`,
+                `${path.normalize(PACKAGE_RESOLVED)}: swift-package-manager-google-mobile-ads pin`,
                 `${path.normalize('iosApp/iosApp/Info.plist')}: GADApplicationIdentifier`,
                 `${path.normalize('iosApp/iosApp/Info.plist')}: SKAdNetworkItems`,
                 `${path.normalize('iosApp/iosApp/Info.plist')}: NSUserTrackingUsageDescription`,
@@ -1601,6 +1601,58 @@ test('ads=false removes InterstitialPacerProvider with the ads demo', async () =
         await processCoreFeatures(dir, { ...ALL_ON, purchases: true, ads: false }, NEW_PACKAGE);
         assert.equal(await exists(dir, `${PRESENTATION_SRC}/ads/InterstitialPacerProvider.kt`), false);
         assert.equal(await exists(dir, 'core/ads'), false);
+    } finally {
+        await fs.remove(dir);
+    }
+});
+
+// The template's Package.resolved also pins the backend's packages (Firebase, GoogleSignIn): with ads off
+// only the GMA and UMP pins go; the file goes when no pin is left
+const RESOLVED_FIXTURE = fs.readFileSync(path.join(__dirname, 'fixtures', 'backend', 'Package.resolved'), 'utf8');
+const ADS_PIN_IDENTITIES = ['swift-package-manager-google-mobile-ads', 'swift-package-manager-google-user-messaging-platform'];
+const pinIdentities = (json) => JSON.parse(json).pins.map((pin) => pin.identity);
+
+test('ads=false with the backend\'s pins keeps Package.resolved without the GMA and UMP pins, in Xcode\'s layout', async () => {
+    assert.ok(ADS_PIN_IDENTITIES.every((id) => pinIdentities(RESOLVED_FIXTURE).includes(id)));
+    const dir = await seedWithPlatform();
+    try {
+        await fs.outputFile(path.join(dir, PACKAGE_RESOLVED), RESOLVED_FIXTURE);
+        await processCoreFeatures(dir, { ...ALL_ON, backend: true, purchases: true, ads: false }, NEW_PACKAGE);
+        const out = await read(dir, PACKAGE_RESOLVED);
+        const pins = pinIdentities(out);
+        assert.deepEqual(pins, pinIdentities(RESOLVED_FIXTURE).filter((id) => !ADS_PIN_IDENTITIES.includes(id)));
+        assert.ok(pins.includes('firebase-ios-sdk') && pins.includes('googlesignin-ios'), pins.join(', '));
+        assert.ok(!('originHash' in JSON.parse(out)));
+        assert.match(out, /^ {6}"identity" : "firebase-ios-sdk",$/m);
+        assert.ok(out.endsWith('}\n'));
+    } finally {
+        await fs.remove(dir);
+    }
+});
+
+test('ads=true keeps the GMA and UMP pins of Package.resolved as they are', async () => {
+    const dir = await seedWithPlatform();
+    try {
+        await fs.outputFile(path.join(dir, PACKAGE_RESOLVED), RESOLVED_FIXTURE);
+        await processCoreFeatures(dir, { ...ALL_ON, backend: true, purchases: true, ads: true }, NEW_PACKAGE);
+        assert.equal(await read(dir, PACKAGE_RESOLVED), RESOLVED_FIXTURE);
+    } finally {
+        await fs.remove(dir);
+    }
+});
+
+test('assertNoMonetizationResidue accepts a Package.resolved without the GMA and UMP pins and reports a UMP pin', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'monetization-'));
+    try {
+        const resolved = JSON.parse(RESOLVED_FIXTURE);
+        const withoutAds = { ...resolved, pins: resolved.pins.filter((pin) => !ADS_PIN_IDENTITIES.includes(pin.identity)) };
+        await fs.outputFile(path.join(dir, PACKAGE_RESOLVED), JSON.stringify(withoutAds, null, 2));
+        await assertNoMonetizationResidue(dir, NEW_PACKAGE, { purchases: true, ads: false });
+
+        const ump = { ...withoutAds, pins: [...withoutAds.pins, { identity: ADS_PIN_IDENTITIES[1] }] };
+        await fs.outputFile(path.join(dir, PACKAGE_RESOLVED), JSON.stringify(ump, null, 2));
+        await assert.rejects(assertNoMonetizationResidue(dir, NEW_PACKAGE, { purchases: true, ads: false }),
+            new RegExp(`${path.normalize(PACKAGE_RESOLVED).replace(/[.]/g, '\\.')}: ${ADS_PIN_IDENTITIES[1]} pin`));
     } finally {
         await fs.remove(dir);
     }

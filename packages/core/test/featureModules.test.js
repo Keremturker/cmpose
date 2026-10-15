@@ -410,7 +410,7 @@ test('purchases or ads against a template without the monetization modules fails
             await assert.rejects(assertTemplateCapabilities(dir, 'blank', config), (err) => {
                 assert.ok(err instanceof TemplateCapabilityError, err.message);
                 assert.equal(err.status, 500);
-                assert.match(err.message, /template lacks the monetization modules/i);
+                assert.match(err.message, /template lacks .* \(older than the release that added them\)/i);
                 assert.match(err.message, /update templateRef/);
                 for (const rel of missing) assert.ok(err.message.includes(rel), `${rel} in ${err.message}`);
                 return true;
@@ -430,6 +430,37 @@ test('the capability check passes without monetization flags, for showcase, and 
         for (const purchases of [false, true]) {
             for (const ads of [false, true]) await assertTemplateCapabilities(dir, 'blank', { purchases, ads });
         }
+    });
+});
+
+// A template pinned before the backend release has none of the backend's directories
+const BACKEND_DIRS = ['server', 'core/api', 'core/auth', 'feature/account', 'feature/sharing'];
+
+test('readiness (no config) does not need the backend directories; a backend request does', async () => {
+    await withTempDir(async (dir) => {
+        await seedMonetization(dir);
+        assert.deepEqual(await missingTemplateCapabilities(dir), []);
+        assert.deepEqual(await missingTemplateCapabilities(dir, { backend: false }), []);
+        assert.deepEqual(await missingTemplateCapabilities(dir, { backend: true }), BACKEND_DIRS);
+        await fs.outputFile(path.join(dir, 'server', 'build.gradle.kts'), '');
+        await fs.outputFile(path.join(dir, 'core', 'auth', 'build.gradle.kts'), '');
+        assert.deepEqual(await missingTemplateCapabilities(dir, { backend: true }), ['core/api', 'feature/account', 'feature/sharing']);
+    });
+});
+
+test('backend against a template without the backend directories fails with a 500 that names them', async () => {
+    await withTempDir(async (dir) => {
+        await seedMonetization(dir);
+        await assert.rejects(assertTemplateCapabilities(dir, 'blank', { backend: true }), (err) => {
+            assert.ok(err instanceof TemplateCapabilityError, err.message);
+            assert.equal(err.status, 500);
+            assert.deepEqual(err.missing, BACKEND_DIRS);
+            assert.equal(err.message, `Template lacks ${BACKEND_DIRS.join(', ')} (older than the release that added them); update templateRef`);
+            return true;
+        });
+        // Showcase ignores featuresConfig, backend included
+        await assertTemplateCapabilities(dir, 'showcase', { backend: true });
+        await assertTemplateCapabilities(dir, 'blank', { backend: false });
     });
 });
 
