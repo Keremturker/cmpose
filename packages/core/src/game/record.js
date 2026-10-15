@@ -33,7 +33,6 @@ function buildGameRecord({ template, coreVersion, generatorVersion = null, value
         render: value.render,
         flags,
         features: strings(value.features),
-        ci: value.ci === true,
         minSdk: value.minSdk,
         iosVersion: value.iosVersion,
         ids: idStatuses(flags, value.ids),

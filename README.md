@@ -11,8 +11,7 @@ It also generates Unity mobile games ("a 2D Unity game called SkyHopper with ads
 leaderboards"): a Unity 6 (URP) Android + iOS project from the pinned game template
 (`Keremturker/cmpose-game-template`), as a `showcase` sample game (2D runner or 3D track) or a
 `blank` game with flags for saving, theming, multi-language, networking, RevenueCat purchases,
-AdMob ads and Play Games / Game Center leaderboards, up to 3 feature modules, your real IDs and
-an optional GameCI workflow.
+AdMob ads and Play Games / Game Center leaderboards, up to 3 feature modules and your real IDs.
 
 - `@cmpose/core` — the generator library (the same code [cmpose.dev](https://cmpose.dev) runs).
 - `@cmpose/mcp` — a local stdio MCP server with four tools: `cmp_describe`, `cmp_generate`,
@@ -45,7 +44,7 @@ Add the server to the client's `mcpServers` configuration:
 (blank only), `minSdk`, `iosVersion`, `ci` and `templateRef`; `cmp_describe` lists the defaults
 and rules. `game_generate` takes the same required fields plus optional `companyName`,
 `templateType`, `render` (`2d` | `3d`), `flags` and `features` (blank only), `minSdk`,
-`iosVersion`, `ci`, `ids` and `templateRef`; `game_describe` lists the flags, ID groups and limits.
+`iosVersion`, `ids` and `templateRef`; `game_describe` lists the flags, ID groups and limits.
 
 ## Develop
 

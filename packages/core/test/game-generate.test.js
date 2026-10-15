@@ -36,9 +36,9 @@ const value = (input) => {
 };
 const exists = (dir, rel) => fs.pathExists(path.join(dir, rel));
 
-async function seeded(t) {
+async function seeded(t, { legacyCi = false } = {}) {
     const dir = await tmpDir(t);
-    await seedGameTemplate(dir, { full: true });
+    await seedGameTemplate(dir, { full: true, legacyCi });
     // A cache's markers and Unity's local state, which never reach the project
     await fs.outputFile(path.join(dir, '.template-ref'), 'game-template-test\n');
     await fs.outputFile(path.join(dir, '.template-commit'), 'abc123\n');
@@ -79,7 +79,7 @@ test('blank with a module and no flags: the module stays, every flag part goes, 
     assert.equal(await exists(dir, `${P}/Features/Showcase`), false);
     assert.deepEqual(await grepTree(dir, 'Kturker.UnityBase'), []);
     for (const gone of ['.git', '.template-ref', '.template-commit', 'LICENSE', 'Library', 'Temp', 'Logs', 'UserSettings',
-        '.cmpose/package-guids.txt', '.cmpose/flags.json', '.github/workflows/ci.yml']) {
+        '.cmpose/package-guids.txt', '.cmpose/flags.json', '.github']) {
         assert.equal(await exists(dir, gone), false, gone);
     }
 
@@ -96,9 +96,9 @@ test('blank with a module and no flags: the module stays, every flag part goes, 
     });
 });
 
-test('blank with ads, real AdMob ids and CI: the ids are written, the workflow stays, no AdMob warning', async (t) => {
+test('blank with ads and real AdMob ids: the ids are written, no AdMob warning', async (t) => {
     const dir = await seeded(t);
-    const v = value({ templateType: 'blank', flags: ['ads'], ci: true, ids: { admob: ADMOB } });
+    const v = value({ templateType: 'blank', flags: ['ads'], ids: { admob: ADMOB } });
     const result = await generateGame(v, { projectDir: dir, template: TEMPLATE, coreVersion: '0.2.0', now: NOW });
 
     const ads = await fs.readFile(path.join(dir, `${P}/Core/Ads/AdsConfig.cs`), 'utf8');
@@ -106,11 +106,21 @@ test('blank with ads, real AdMob ids and CI: the ids are written, the workflow s
     assert.doesNotMatch(ads, /3940256099942544/);
     const settings = await fs.readFile(path.join(dir, 'Assets/GoogleMobileAds/Resources/GoogleMobileAdsSettings.asset'), 'utf8');
     assert.match(settings, /adMobAndroidAppId: ca-app-pub-1234567890123456~1234567890/);
-    assert.ok(await exists(dir, '.github/workflows/ci.yml'));
     assert.match(await fs.readFile(path.join(dir, 'README.md'), 'utf8'), /## Ads/);
     assert.equal(result.ids.admob, 'custom');
     assert.ok(!result.warnings.includes(W.admob));
     assert.deepEqual(result.warnings, [W.unity]);
+});
+
+test('an older template with a GameCI workflow: .github and the README CI section never ship', async (t) => {
+    const dir = await seeded(t, { legacyCi: true });
+    assert.ok(await exists(dir, '.github/workflows/ci.yml'));
+    await generateGame(value({ templateType: 'showcase' }), { projectDir: dir, template: TEMPLATE, coreVersion: '0.2.0', now: NOW });
+    assert.equal(await exists(dir, '.github'), false);
+    const readme = await fs.readFile(path.join(dir, 'README.md'), 'utf8');
+    assert.doesNotMatch(readme, /cmpose:ci|GameCI/);
+    const record = JSON.parse(await fs.readFile(path.join(dir, '.cmpose/generation.json'), 'utf8'));
+    assert.ok(!('ci' in record));
 });
 
 test('showcase: the sample goes, every flag stays on and the test-id warnings come first', async (t) => {
@@ -161,7 +171,7 @@ test('describeGame states the engine, the pin, the defaults and the contract', (
         template: pins.game,
         defaults: {
             templateType: 'showcase', render: '2d', flags: { showcase: GAME_SCHEMA.flags.slice(), blank: [] },
-            features: [], minSdk: 25, iosVersion: '15.0', ci: false
+            features: [], minSdk: 25, iosVersion: '15.0'
         },
         contract: gameContractFacts()
     });

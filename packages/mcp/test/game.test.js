@@ -60,6 +60,27 @@ test('lists game_describe and game_generate', async () => {
     await close();
 });
 
+test('game_generate does not offer ci (GameCI is not offered for games); cmp_generate keeps it', async () => {
+    const { client, close } = await connect({});
+    const { tools } = await client.listTools();
+    const props = (name) => Object.keys(tools.find((t) => t.name === name).inputSchema.properties);
+    assert.ok(!props('game_generate').includes('ci'), props('game_generate').join(', '));
+    assert.ok(props('cmp_generate').includes('ci'));
+    const r = await client.callTool({ name: 'game_describe', arguments: {} });
+    assert.ok(!('ci' in r.structuredContent.defaults));
+    await close();
+});
+
+test('game_generate drops an unknown ci argument (not in its schema) and ships no workflow', async () => {
+    const { client, outputDir, cleanup } = await setup();
+    const r = await generate(client, { outputDir, ci: true });
+    assert.notStrictEqual(r.isError, true, r.content?.[0]?.text);
+    const projectDir = path.join(outputDir, 'SkyHopper');
+    assert.equal(await fs.pathExists(path.join(projectDir, '.github')), false);
+    assert.ok(!('ci' in await fs.readJson(path.join(projectDir, '.cmpose/generation.json'))));
+    await cleanup();
+});
+
 test('game_describe returns unity 6000.3.25f1 and the pin', async () => {
     const { client, close } = await connect({});
     const r = await client.callTool({ name: 'game_describe', arguments: {} });

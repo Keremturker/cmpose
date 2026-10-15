@@ -3,7 +3,6 @@ const fs = require('fs-extra');
 const path = require('path');
 const { log } = require('../log');
 const pins = require('../pins');
-const { applyCiOption } = require('../ciOption');
 const { COMMIT_FILE_NAME, REF_FILE_NAME } = require('../templateVersions');
 const { GAME_SCHEMA } = require('./contract');
 const { cloneModules } = require('./modules');
@@ -15,8 +14,9 @@ const { buildGameRecord, writeGameRecord } = require('./record');
 const { verifyGameProject } = require('./verifier');
 
 // The template cache's own records and Unity's local state never reach the project; nor does the template's
-// LICENSE (the generated project is the user's, to license as they choose)
-const LEFTOVERS = ['.git', COMMIT_FILE_NAME, REF_FILE_NAME, 'LICENSE', 'Library', 'Temp', 'Logs', 'UserSettings'];
+// LICENSE (the generated project is the user's, to license as they choose), nor an older template's GameCI
+// workflow (.github; GameCI is not offered for games)
+const LEFTOVERS = ['.git', COMMIT_FILE_NAME, REF_FILE_NAME, 'LICENSE', 'Library', 'Temp', 'Logs', 'UserSettings', '.github'];
 const PACKAGE_GUIDS = path.join('.cmpose', 'package-guids.txt');
 
 function gameWarnings(value) {
@@ -57,10 +57,9 @@ async function generateGame(value, { projectDir, template = null, coreVersion, g
     await applyFlags(projectDir, { kind: value.templateType, render: value.render, off });
     log.info(`✅ Applied ${value.templateType} (${value.render}), flags off: ${off.length ? off.join(', ') : 'none'}`);
 
-    // 4–6. identity, real IDs, CI and README
+    // 4–6. identity, real IDs and README
     await applyGameIdentity(projectDir, value);
     await writeGameIds(projectDir, value.ids);
-    await applyCiOption(projectDir, value.ci);
     await applyGameReadme(projectDir, value);
     log.info(`✅ Renamed to ${value.companyName}.${value.projectName} (${value.packageName})`);
 

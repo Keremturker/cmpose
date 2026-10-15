@@ -15,8 +15,7 @@ function describeGame() {
             flags: { showcase: GAME_SCHEMA.flags.slice(), blank: [] },
             features: [],
             minSdk: GAME_SCHEMA.limits.minSdkMin,
-            iosVersion: GAME_SCHEMA.limits.iosVersionMin,
-            ci: false
+            iosVersion: GAME_SCHEMA.limits.iosVersionMin
         },
         contract: gameContractFacts()
     };

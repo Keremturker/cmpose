@@ -185,7 +185,10 @@ Banner, interstitial and rewarded ads through Google Mobile Ads.
 ## Build from the command line
 
 Open the project in Unity and build.
+`;
 
+// Older template pins (before GameCI was dropped) shipped a GameCI workflow and a README CI section
+const LEGACY_CI_README = `
 <!-- cmpose:ci -->
 **CI:** \`.github/workflows/ci.yml\` runs the EditMode tests and an Android build with GameCI.
 <!-- /cmpose:ci -->
@@ -240,7 +243,7 @@ function fullFlags(flags) {
     return out;
 }
 
-async function seedGameTemplate(dir, { full = false } = {}) {
+async function seedGameTemplate(dir, { full = false, legacyCi = false } = {}) {
     const f = (rel, content) => fs.outputFile(path.join(dir, rel), content);
     const folder = (rel, guid) => f(`${rel}.meta`, meta(guid, true));
     const asset = async (rel, guid, content) => { await f(rel, content); await f(`${rel}.meta`, meta(guid)); };
@@ -253,8 +256,8 @@ async function seedGameTemplate(dir, { full = false } = {}) {
     await f('.cmpose/flags.json', json(full ? fullFlags(FLAGS) : FLAGS, 2));
     await f('.cmpose/package-guids.txt', '');
     await f('Packages/manifest.json', json(PACKAGES, 2));
-    await f('README.md', README);
-    await f('.github/workflows/ci.yml', CI);
+    await f('README.md', legacyCi ? README + LEGACY_CI_README : README);
+    if (legacyCi) await f('.github/workflows/ci.yml', CI);
 
     await folder(P, GUIDS.project);
 

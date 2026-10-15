@@ -168,7 +168,9 @@ function validateGame(input) {
         iosVersion = v;
     }
 
+    // GameCI is not offered for Unity games: false (or absent) is accepted and dropped
     if (input.ci !== undefined && typeof input.ci !== 'boolean') return fail('ci must be a boolean');
+    if (input.ci === true) return fail('ci is not offered for Unity games');
 
     let ids = {};
     if (input.ids !== undefined) {
@@ -179,7 +181,7 @@ function validateGame(input) {
 
     return {
         ok: true,
-        value: { projectName, appName, packageName, companyName, templateType, render, flags, features, minSdk, iosVersion, ci: input.ci === true, ids }
+        value: { projectName, appName, packageName, companyName, templateType, render, flags, features, minSdk, iosVersion, ids }
     };
 }
 

@@ -71,7 +71,6 @@ saving, deep links, and in-app review and update check.
 - **IDs:** `ids` takes your real AdMob (`admob`), RevenueCat (`revenueCat`) and Play Games +
   Game Center (`gameServices`) IDs, each group with its flag; `game_describe` lists the fields.
   A group you leave out keeps the test IDs / placeholders and is reported as a warning.
-- **CI:** an optional GitHub Actions workflow with GameCI.
 - **Your names everywhere:** package (application identifier), company name, app name, min SDK
   (25 to 36) and iOS deployment target (15.0 to 26.2).
 
@@ -93,7 +92,7 @@ saving, deep links, and in-app review and update check.
   Optional: `companyName` (like `projectName`; by default the package's second segment,
   capitalized), `templateType`, `render`, `flags`, `features` (module names: 1 to 20 lowercase
   letters or digits, starting with a letter), `minSdk` (25 to 36), `iosVersion` (15.0 to 26.2,
-  written as `major.minor`), `ci`, `ids`, `templateRef`. It never overwrites a non-empty folder.
+  written as `major.minor`), `ids`, `templateRef`. It never overwrites a non-empty folder.
 
 ## How it works
 

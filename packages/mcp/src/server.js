@@ -87,7 +87,6 @@ function createServer({ cacheDir, remoteUrl } = {}) {
             features: z.array(z.string()).optional().describe('blank only: extra feature modules (lower case names)'),
             minSdk: z.union([z.string(), z.number()]).optional().describe('Android min SDK, e.g. "25" or 25'),
             iosVersion: z.union([z.string(), z.number()]).optional().describe('iOS deployment target, e.g. "15.0"'),
-            ci: z.boolean().optional(),
             ids: z.record(z.string(), z.record(z.string(), z.string())).optional()
                 .describe('Real IDs by group (admob, revenueCat, gameServices; fields in game_describe), each needing its flag. ' +
                     'A group left out keeps the test IDs / placeholders, reported as a warning'),

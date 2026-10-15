@@ -10,7 +10,7 @@ const ADMOB_APP = 'ca-app-pub-1234567890123456~1234567890';
 const VALUE = {
     projectName: 'SkyHopper', appName: 'Sky Hopper', packageName: 'com.acme.skyhopper', companyName: 'Acme',
     templateType: 'blank', render: '2d', flags: ['network', 'purchases', 'ads'], features: ['shop'],
-    minSdk: 26, iosVersion: '16.0', ci: true,
+    minSdk: 26, iosVersion: '16.0',
     ids: { admob: { androidAppId: ADMOB_APP, iosAppId: ADMOB_APP } }
 };
 const TEMPLATE = { repo: 'https://example.com/unity-template.git', ref: 'game-2026.10.14', commit: 'abc123' };
@@ -28,7 +28,6 @@ test('buildGameRecord records the options and id statuses, never the id values',
         render: '2d',
         flags: ['network', 'purchases', 'ads'],
         features: ['shop'],
-        ci: true,
         minSdk: 26,
         iosVersion: '16.0',
         ids: { admob: 'custom', revenueCat: 'test', gameServices: 'off' },

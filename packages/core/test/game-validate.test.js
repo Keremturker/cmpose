@@ -12,7 +12,8 @@ const ADMOB = { androidAppId: 'ca-app-pub-1234567890123456~1234567890', iosAppId
 
 test('defaults for showcase', () => {
     const v = ok(base);
-    assert.deepStrictEqual([v.templateType, v.render, v.minSdk, v.iosVersion, v.ci, v.companyName], ['showcase', '2d', 25, '15.0', false, 'Acme']);
+    assert.deepStrictEqual([v.templateType, v.render, v.minSdk, v.iosVersion, v.companyName], ['showcase', '2d', 25, '15.0', 'Acme']);
+    assert.ok(!('ci' in v));
     assert.deepStrictEqual(v.flags, ['saveSystem', 'uiTheme', 'multiLang', 'network', 'networkInspector', 'purchases', 'ads', 'leaderboards']);
     assert.deepStrictEqual([v.features, v.ids], [[], {}]);
 });
@@ -118,6 +119,11 @@ test('wrongly typed ids, ci and flags are rejected with a clear message', () => 
     for (const ids of ['x', [], 5, null]) assert.strictEqual(validateGame({ ...b, ids }).error, 'ids must be an object');
     for (const ci of ['true', 1, null]) assert.strictEqual(validateGame({ ...base, ci }).error, 'ci must be a boolean');
     for (const flags of ['ads', { ads: true }, null]) assert.match(validateGame({ ...b, flags }).error, /^flags must be an array of: /);
+});
+test('ci is not offered for Unity games: true is refused, false is accepted and dropped', () => {
+    assert.strictEqual(validateGame({ ...base, ci: true }).error, 'ci is not offered for Unity games');
+    assert.ok(!('ci' in ok({ ...base, ci: false })));
+    assert.ok(!('ci' in ok(base)));
 });
 
 test('a malformed iosVersion gets a format message, an out-of-range one the range', () => {
