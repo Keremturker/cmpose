@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+    <dict>
+        <key>CADisableMinimumFrameDurationOnPhone</key>
+        <true/>
+        <key>UIApplicationSceneManifest</key>
+        <dict>
+            <key>UIApplicationSupportsMultipleScenes</key>
+            <false/>
+        </dict>
+        <!-- cmpose:backend -->
+#if LOCAL_SERVER
+        <!-- Debug only (LOCAL_SERVER is defined for the Debug configuration, INFOPLIST_PREPROCESSOR_DEFINITIONS):
+             plain HTTP to local addresses for the local server; ATS stays on elsewhere -->
+        <key>NSAppTransportSecurity</key>
+        <dict>
+            <key>NSAllowsLocalNetworking</key>
+            <true/>
+        </dict>
+#endif
+        <!-- /cmpose:backend -->
+        <key>CFBundleURLTypes</key>
+        <array>
+            <dict>
+                <key>CFBundleURLName</key>
+                <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+                <key>CFBundleURLSchemes</key>
+                <array>
+                    <string>multiplatform</string>
+                </array>
+            </dict>
+            <!-- cmpose:backend -->
+            <!-- Google Sign-In returns to the app through this scheme (Config.xcconfig); empty is harmless -->
+            <dict>
+                <key>CFBundleURLName</key>
+                <string>google-sign-in</string>
+                <key>CFBundleURLSchemes</key>
+                <array>
+                    <string>$(GOOGLE_REVERSED_CLIENT_ID)</string>
+                </array>
+            </dict>
+            <!-- /cmpose:backend -->
+        </array>
+        <key>GADApplicationIdentifier</key>
+        <string>ca-app-pub-3940256099942544~1458002511</string>
+    </dict>
+</plist>

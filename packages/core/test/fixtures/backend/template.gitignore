@@ -1,0 +1,15 @@
+local.properties
+.idea
+
+# Release signing
+keystore.properties
+*.jks
+# cmpose:backend
+
+# Local development server data (embedded PostgreSQL, files, config)
+/.local-server/
+
+# Firebase app config: per developer, never committed (the app builds and runs without it)
+androidApp/google-services.json
+iosApp/iosApp/GoogleService-Info.plist
+# /cmpose:backend

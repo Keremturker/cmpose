@@ -1,0 +1,31 @@
+[versions]
+kotlin = "2.3.21"
+turbine = "1.2.1"
+# cmpose:backend
+androidxTestRunner = "1.7.0"
+# /cmpose:backend
+revenuecat = "3.11.0"
+# cmpose:backend
+exposed = "0.61.0"
+googleId = "1.2.1"
+# /cmpose:backend
+
+[libraries]
+ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktorClientCore" }
+# cmpose:backend
+ktor-client-auth = { module = "io.ktor:ktor-client-auth", version.ref = "ktorClientCore" }
+# /cmpose:backend
+ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktorClientCore" }
+# cmpose:backend
+
+ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktorClientCore" }
+exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
+# /cmpose:backend
+
+kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+
+[plugins]
+aboutLibraries = { id = "com.mikepenz.aboutlibraries.plugin", version.ref = "aboutLibraries" }
+# cmpose:backend
+googleServices = { id = "com.google.gms.google-services", version.ref = "googleServices" }
+# /cmpose:backend

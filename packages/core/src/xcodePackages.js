@@ -114,4 +114,4 @@ function removeSwiftPackageLf(content, repositoryUrl) {
     return result;
 }
 
-module.exports = { removeSwiftPackage };
+module.exports = { removeSwiftPackage, parseObjects, isa };
