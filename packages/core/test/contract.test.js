@@ -25,3 +25,23 @@ test('custom limits reconfigure the validator messages', () => {
     assert.match(facts.messages.maxModulesReached, /7/);
     contractFacts(); // restore defaults for other tests
 });
+
+test('backend adds its anatomy entries and the invite deep link', () => {
+    const facts = contractFacts();
+    assert.ok(facts.featuresConfigKeys.includes('backend'));
+    assert.deepStrictEqual(facts.dependencyRules.implies.backend, ['multiLang', 'network']);
+    for (const dir of ['core/api', 'core/auth']) {
+        assert.deepStrictEqual(facts.anatomy.coreModules[dir].requires, ['backend'], dir);
+    }
+    for (const dir of ['feature/account', 'feature/sharing']) {
+        assert.deepStrictEqual(facts.anatomy.featureModules[dir].requires, ['backend'], dir);
+    }
+    assert.deepStrictEqual(facts.anatomy.serverDir, { path: 'server/', requires: ['backend'] });
+    assert.deepStrictEqual(facts.deepLinks.backend, { links: ['invite/<token>'], requires: ['backend'] });
+});
+
+test('the backend flag changes the contract hash', () => {
+    const before = require('./fixtures/contract/facts-before-backend.json');
+    assert.strictEqual(before.featuresConfigKeys.includes('backend'), false);
+    assert.notStrictEqual(hashContract(contractFacts()), hashContract(before));
+});

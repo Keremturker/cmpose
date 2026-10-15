@@ -76,10 +76,11 @@ async function generateCmpProject(value, { projectDir, generatorVersion = null }
 
     await updateiOSProject(projectDir, packageName, iosVersion);
     await updateiOSConfigFiles(projectDir, packageName, appName, iosVersion);
-    // Store-ready: the privacy manifest declares the data the on flags collect (showcase: both on)
+    // Store-ready: the privacy manifest declares the data the on flags collect (showcase: ads and
+    // purchases on, never backend)
     await writePrivacyManifest(projectDir, templateType === 'blank'
-        ? { ads: featuresConfig.ads === true, purchases: featuresConfig.purchases === true }
-        : { ads: true, purchases: true });
+        ? { ads: featuresConfig.ads === true, purchases: featuresConfig.purchases === true, backend: featuresConfig.backend === true }
+        : { ads: true, purchases: true, backend: false });
     log.info('✅ iOS configuration updated');
 
     await fillReadme(projectDir, { versions, minSdk, iosVersion });

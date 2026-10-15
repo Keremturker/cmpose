@@ -8,10 +8,10 @@ const { OLD_PACKAGE_NAME } = require('./templateIdentity');
 // sync-contract.sh; featuresConfig.js and the generator read the same objects.
 const SCHEMA = {
     templateTypes: ['blank', 'showcase'],
-    featuresConfigKeys: ['network', 'networkInspector', 'networkBaseUrl', 'theming', 'multiLang', 'dataStore', 'detekt', 'detektYamlContent', 'purchases', 'ads', 'room'],
+    featuresConfigKeys: ['network', 'networkInspector', 'networkBaseUrl', 'theming', 'multiLang', 'dataStore', 'detekt', 'detektYamlContent', 'purchases', 'ads', 'room', 'backend'],
     dependencyRules: {
         alwaysOn: ['koin', 'navigation'],
-        implies: { networkInspector: ['network'] },        // inspector => network
+        implies: { networkInspector: ['network'], backend: ['multiLang', 'network'] },  // inspector => network; backend => multiLang + network
         auto: { dataStore: ['theming', 'multiLang'] }      // theming || multiLang => dataStore
     },
     // Top-level request options that apply to every template (featuresConfig is blank-only)
@@ -30,24 +30,31 @@ const SCHEMA = {
             'core/database': { requires: ['dataStore'], note: 'DataStore persistence; with theming also the saved Light/Dark/System choice (DarkModeManager)' },
             'core/purchases': { requires: ['purchases'], note: 'offer / purchase / restore API, RevenueCat KMP (Test Store key: replace before you ship)' },
             'core/ads': { requires: ['ads'], note: 'AdMob banner/interstitial/rewarded + UMP/ATT consent (test IDs)' },
-            'core/room': { requires: ['room'], note: 'Room KMP database (bundled SQLite): AppDatabase, DAOs, schemas/' }
+            'core/room': { requires: ['room'], note: 'Room KMP database (bundled SQLite): AppDatabase, DAOs, schemas/' },
+            'core/api': { requires: ['backend'], note: 'models and routes shared by the app and the server' },
+            'core/auth': { requires: ['backend'], note: 'Firebase sign-in (email, Google, Apple); the server client\'s token' }
         },
         // featuresConfig flag -> feature modules kept in a blank project (same requires/requiresAny rules).
         featureModules: {
             'feature/monetization': { requiresAny: ['purchases', 'ads'], note: 'custom paywall (Compose) and/or ads demo' },
-            'feature/notes': { requires: ['room'], note: 'Notes demo screen on Room (blank only; showcase uses Room for favorites)' }
+            'feature/notes': { requires: ['room'], note: 'Notes demo screen on Room (blank only; showcase uses Room for favorites)' },
+            'feature/account': { requires: ['backend'], note: 'sign-in screens and the account (blank only)' },
+            'feature/sharing': { requires: ['backend'], note: 'shared spaces and invites (blank only)' }
         },
         detektDir: { requires: ['detekt'], path: 'detekt/' },
+        // Ktor server (blank only): `./gradlew :server:runLocal` runs it locally
+        serverDir: { path: 'server/', requires: ['backend'] },
         showcaseFeatures: ['feature/home', 'feature/monetization', 'feature/onboarding'],
         customFeaturePath: 'feature/<name>',
         customFeatureLayers: ['contract', 'data', 'domain', 'presentation']
     },
     // Deep links (<scheme>://<path>): the generator writes the scheme; '' opens the start screen and
-    // '<module>' each generated feature module
+    // '<module>' each generated feature module; backend adds the sharing invite (blank only)
     deepLinks: {
         scheme: 'projectName, lower case',
         showcase: ['user/{username}', 'settings'],
-        blank: ['', '<module>']
+        blank: ['', '<module>'],
+        backend: { links: ['invite/<token>'], requires: ['backend'] }
     }
 };
 

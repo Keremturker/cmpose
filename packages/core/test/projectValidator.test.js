@@ -89,6 +89,16 @@ test('validateModuleName rejects the reserved name notes', () => {
     assert.equal(ProjectValidator.validateModuleName('notebook'), true);
 });
 
+test('validateModuleName rejects the backend feature names account and sharing', () => {
+    for (const name of ['account', 'sharing']) {
+        assert.equal(ProjectValidator.validateModuleName(name), false, name);
+        assert.ok(ProjectValidator.RESERVED_MODULE_NAMES.includes(name), name);
+    }
+    assert.match(ProjectValidator.messages.moduleNameInvalid, /reserved names \(build, monetization, notes, account, sharing\)/);
+    assert.equal(ProjectValidator.validateModuleName('accounts'), true);
+    assert.equal(ProjectValidator.validateModuleName('share'), true);
+});
+
 test('moduleNameInvalid message mentions keywords', () => {
     assert.match(ProjectValidator.messages.moduleNameInvalid, /keyword/i);
 });

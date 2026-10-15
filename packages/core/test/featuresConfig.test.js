@@ -11,7 +11,8 @@ const DEFAULTS = {
     detekt: false,
     purchases: false,
     ads: false,
-    room: false
+    room: false,
+    backend: false
 };
 
 test('undefined featuresConfig normalizes to all-false defaults', () => {
@@ -49,6 +50,16 @@ test('{networkInspector:true} forces network to true (dependency rule)', () => {
     assert.deepEqual(result.value, { ...DEFAULTS, networkInspector: true, network: true });
 });
 
+test('backend is off when missing and implies multiLang, network and dataStore', () => {
+    assert.strictEqual(normalizeFeaturesConfig({}).value.backend, false);
+    const v = normalizeFeaturesConfig({ backend: true, multiLang: false, network: false, dataStore: false }).value;
+    assert.deepStrictEqual([v.backend, v.multiLang, v.network, v.dataStore], [true, true, true, true]);
+});
+
+test('backend must be a boolean', () => {
+    assert.match(normalizeFeaturesConfig({ backend: 'yes' }).error, /featuresConfig\.backend must be a boolean/);
+});
+
 test('{network:"yes"} is rejected: booleans must be actual booleans', () => {
     const result = normalizeFeaturesConfig({ network: 'yes' });
 
@@ -57,7 +68,7 @@ test('{network:"yes"} is rejected: booleans must be actual booleans', () => {
     assert.ok(result.error.length > 0);
 });
 
-for (const key of ['network', 'networkInspector', 'theming', 'multiLang', 'dataStore', 'detekt', 'purchases', 'ads', 'room']) {
+for (const key of ['network', 'networkInspector', 'theming', 'multiLang', 'dataStore', 'detekt', 'purchases', 'ads', 'room', 'backend']) {
     test(`non-boolean ${key} is rejected`, () => {
         for (const bad of ['true', 1, 0, null, [], {}]) {
             const result = normalizeFeaturesConfig({ [key]: bad });
@@ -160,7 +171,8 @@ test('a fully-populated, rule-consistent payload normalizes to itself (no-op)', 
         detektYamlContent: null,
         purchases: true,
         ads: true,
-        room: true
+        room: true,
+        backend: false
     };
 
     const result = normalizeFeaturesConfig(wizardPayload);
@@ -176,7 +188,8 @@ test('a fully-populated, rule-consistent payload normalizes to itself (no-op)', 
         detekt: false,
         purchases: true,
         ads: true,
-        room: true
+        room: true,
+        backend: false
     });
 });
 

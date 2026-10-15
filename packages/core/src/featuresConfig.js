@@ -3,7 +3,7 @@
  * Pure function: no HTTP or file system, does not mutate its input.
  *
  * The web wizard applied the dependency rules (networkInspector ⇒ network,
- * theming || multiLang ⇒ dataStore) only on the client; this function applies
+ * backend ⇒ multiLang + network, theming || multiLang ⇒ dataStore) only on the client; this function applies
  * the same rules here too (as auto-true, never as an error) and fills missing
  * keys with safe defaults, so `fileService.js` always gets a complete,
  * consistent object.
@@ -20,7 +20,8 @@ const DEFAULTS = Object.freeze({
     detekt: false,
     purchases: false,
     ads: false,
-    room: false
+    room: false,
+    backend: false
 });
 
 // Boolean flags = the contract's featuresConfig keys that have a default (networkBaseUrl and

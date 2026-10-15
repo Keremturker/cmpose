@@ -80,6 +80,20 @@ test('renderModules describes core/about as app version, legal links and licence
     assert.ok(out.includes('- `:core:about`: app version, legal links and open source licences'), out);
 });
 
+test('renderModules lists the backend modules and the server with descriptions', () => {
+    const settings = ['include(":shared")', 'include(":core:api")', 'include(":core:auth")', 'include(":server")'].join('\n');
+
+    const out = renderModules(settings);
+
+    assert.ok(out.includes('- `:core:api`: models and routes shared by the app and the server'), out);
+    assert.ok(out.includes("- `:core:auth`: Firebase sign-in: email, Google, Apple; the server client's token"), out);
+    assert.ok(out.includes('- `:server`: Ktor server: sign-in check, spaces, sharing, files; `./gradlew :server:runLocal`'), out);
+});
+
+test('renderModules does not list a server the settings do not include', () => {
+    assert.ok(!renderModules('include(":shared")').includes(':server'));
+});
+
 test('renderModules describes core/update as app updates', () => {
     const settings = ['include(":shared")', 'include(":core:domain")', 'include(":core:update")'].join('\n');
 

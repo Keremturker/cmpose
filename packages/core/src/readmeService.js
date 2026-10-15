@@ -23,7 +23,9 @@ const CORE_DESCRIPTIONS = {
     review: 'in-app review (Play In-App Review, StoreKit) and the store page link',
     update: 'app updates: Play In-App Updates, the App Store lookup and an optional minimum version',
     ads: 'AdMob ads and consent (test IDs)',
-    room: 'Room database (bundled SQLite): AppDatabase, DAOs and schemas'
+    room: 'Room database (bundled SQLite): AppDatabase, DAOs and schemas',
+    api: 'models and routes shared by the app and the server',
+    auth: "Firebase sign-in: email, Google, Apple; the server client's token"
 };
 
 function renderRequirements(versions, { minSdk, iosVersion }) {
@@ -63,6 +65,9 @@ function renderModules(settingsContent) {
     for (const feature of features) {
         const layers = paths.filter((x) => x.startsWith(`:feature:${feature}:`)).map((x) => x.split(':')[3]).sort();
         lines.push(layers.length ? `- \`:feature:${feature}\`: ${layers.join(', ')}` : `- \`:feature:${feature}\``);
+    }
+    if (paths.includes(':server')) {
+        lines.push('- `:server`: Ktor server: sign-in check, spaces, sharing, files; `./gradlew :server:runLocal`');
     }
     return lines.join('\n');
 }

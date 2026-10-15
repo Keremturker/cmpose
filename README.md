@@ -4,8 +4,9 @@ Generate Compose Multiplatform projects on your own machine — from any AI agen
 
 Ask your agent for an app ("a blank Compose Multiplatform app called Habits with Room and
 theming") and get a buildable Android + iOS project from a tested template: Koin, Navigation,
-Ktor, Room, DataStore, theming, multi-language, RevenueCat purchases, AdMob ads, detekt and CI
-as options. What each option adds: [packages/mcp/README.md](packages/mcp/README.md).
+Ktor, Room, DataStore, theming, multi-language, RevenueCat purchases, AdMob ads, detekt,
+backend (Ktor server, Firebase sign-in, sharing; blank only; turns on multi-language and
+networking) and CI as options. What each option adds: [packages/mcp/README.md](packages/mcp/README.md).
 
 It also generates Unity mobile games ("a 2D Unity game called SkyHopper with ads and
 leaderboards"): a Unity 6 (URP) Android + iOS project from the pinned game template

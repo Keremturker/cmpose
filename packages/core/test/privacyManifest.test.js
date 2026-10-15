@@ -69,3 +69,19 @@ test('writePrivacyManifest renders the project file in place', async () => {
         await fs.remove(dir);
     }
 });
+
+test('a cmpose:backend block stays (without markers) for backend on and goes for backend off', () => {
+    const fixture = read('PrivacyInfo.backend.xcprivacy');
+    const on = renderPrivacyManifest(fixture, { backend: true });
+    assert.ok(on.includes('NSPrivacyCollectedDataTypeEmailAddress'), on);
+    assert.ok(!on.includes('cmpose:'), on);
+    const off = renderPrivacyManifest(fixture, { backend: false });
+    assert.ok(!off.includes('NSPrivacyCollectedDataTypeEmailAddress'), off);
+    assert.ok(!off.includes('cmpose:'), off);
+    // The collected data array had only the backend block: it collapses
+    assert.match(off, /<key>NSPrivacyCollectedDataTypes<\/key>\n    <array\/>/);
+});
+
+test('the template fixture renders the same with backend off (no backend block)', () => {
+    assert.equal(renderPrivacyManifest(TEMPLATE, { ads: false, purchases: false, backend: false }), read('expected-none.xcprivacy'));
+});

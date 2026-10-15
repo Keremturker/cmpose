@@ -147,6 +147,23 @@ test('featuresConfig on a showcase project is reported as ignored', async () => 
     await cleanup();
 });
 
+test('cmp_describe defaults include backend off', () => {
+    const { describe } = require('../src/describe');
+    assert.strictEqual(describe().defaults.featuresConfig.backend, false);
+});
+
+test('backend on a showcase project is reported as ignored', async () => {
+    const { opts, outputDir, cleanup } = await setup();
+    const r = await runGenerate(args(outputDir, { featuresConfig: { backend: true } }), opts);
+    assert.notStrictEqual(r.isError, true, r.content?.[0]?.text);
+    const warning = r.structuredContent.warnings.find((w) => /featuresConfig/.test(w));
+    assert.ok(warning, 'a featuresConfig warning');
+    assert.match(warning, /ignored for showcase/);
+    assert.ok(!r.structuredContent.warnings.some((w) => /Firebase|:server:runLocal/.test(w)));
+    assert.strictEqual(r.structuredContent.featuresConfig, null);
+    await cleanup();
+});
+
 test('no featuresConfig warning when showcase is generated without one', async () => {
     const { opts, outputDir, cleanup } = await setup();
     const r = await runGenerate(args(outputDir), opts);

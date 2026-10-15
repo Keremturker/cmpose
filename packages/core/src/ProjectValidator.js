@@ -47,8 +47,8 @@
     // Module names the generator cannot use: file processing skips every directory named build
     // (Gradle output), so feature/build would keep the template package; monetization is the
     // template's own feature/monetization module (purchases/ads flags); notes is blank's Room demo
-    // (feature/notes)
-    const RESERVED_MODULE_NAMES = ['build', 'monetization', 'notes'];
+    // (feature/notes); account and sharing are the backend flag's feature/account and feature/sharing
+    const RESERVED_MODULE_NAMES = ['build', 'monetization', 'notes', 'account', 'sharing'];
 
     /**
      * Compare two version strings (e.g., '15.0' vs '15.0.1')
