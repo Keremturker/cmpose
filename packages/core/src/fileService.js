@@ -48,11 +48,12 @@ function sanitizeXcconfigValue(s) {
     return String(s).replace(/\r\n|\r|\n/g, ' ');
 }
 
-// The xcconfig bundle id line is written in one pass (idempotent; $(TEAM_ID) is added even when missing)
+// The xcconfig bundle id line is written in one pass (idempotent). It is the bare package: TEAM_ID only picks the
+// signing team, and a template's older $(TEAM_ID) suffix goes with the rest of the line
 function replaceXcconfigBundleId(content, newPackage) {
     return content.replace(
         /^PRODUCT_BUNDLE_IDENTIFIER\s*=.*$/gm,
-        () => 'PRODUCT_BUNDLE_IDENTIFIER=' + newPackage + '$(TEAM_ID)'
+        () => 'PRODUCT_BUNDLE_IDENTIFIER=' + newPackage
     );
 }
 

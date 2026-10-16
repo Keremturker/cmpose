@@ -26,7 +26,7 @@ const TEMPLATE_XCCONFIG = [
     'TEAM_ID=',
     '',
     'PRODUCT_NAME=ComposeMultiplatform',
-    'PRODUCT_BUNDLE_IDENTIFIER=com.kturker.composemultiplatform.ComposeMultiplatform$(TEAM_ID)',
+    'PRODUCT_BUNDLE_IDENTIFIER=com.kturker.composemultiplatform.ComposeMultiplatform',
     '',
     'CURRENT_PROJECT_VERSION=1',
     'MARKETING_VERSION=1.0',
@@ -92,7 +92,7 @@ test('replaceInContent writes exactly one bundle id line into the template xccon
     const out = rewrite(TEMPLATE_XCCONFIG);
 
     assert.deepEqual(linesStartingWith(out, 'PRODUCT_BUNDLE_IDENTIFIER'), [
-        'PRODUCT_BUNDLE_IDENTIFIER=dev.cmpose.app$(TEAM_ID)'
+        'PRODUCT_BUNDLE_IDENTIFIER=dev.cmpose.app'
     ]);
     assert.deepEqual(linesStartingWith(out, 'PRODUCT_NAME'), ['PRODUCT_NAME=My App']);
     // Untouched lines stay as they were
@@ -100,15 +100,23 @@ test('replaceInContent writes exactly one bundle id line into the template xccon
     assert.match(out, /^TEAM_ID=$/m);
 });
 
+// TEAM_ID picks the signing team only: Firebase, App Store Connect and Sign in with Apple need the bare bundle id
+test('replaceInContent drops the $(TEAM_ID) suffix of a template from before template-2026.10.16.3', () => {
+    const out = rewrite('PRODUCT_BUNDLE_IDENTIFIER=com.kturker.composemultiplatform.ComposeMultiplatform$(TEAM_ID)\nTEAM_ID=');
+    assert.deepEqual(linesStartingWith(out, 'PRODUCT_BUNDLE_IDENTIFIER'), [
+        'PRODUCT_BUNDLE_IDENTIFIER=dev.cmpose.app'
+    ]);
+});
+
 test('replaceInContent bundle id rewrite is idempotent', () => {
     const once = rewrite(TEMPLATE_XCCONFIG);
     assert.equal(rewrite(once), once);
 });
 
-test('replaceInContent adds $(TEAM_ID) when the bundle id line lacks it', () => {
+test('replaceInContent writes the bundle id without $(TEAM_ID) when the line lacks it', () => {
     const out = rewrite('PRODUCT_BUNDLE_IDENTIFIER = com.old.App\nTEAM_ID=');
     assert.deepEqual(linesStartingWith(out, 'PRODUCT_BUNDLE_IDENTIFIER'), [
-        'PRODUCT_BUNDLE_IDENTIFIER=dev.cmpose.app$(TEAM_ID)'
+        'PRODUCT_BUNDLE_IDENTIFIER=dev.cmpose.app'
     ]);
 });
 
@@ -123,13 +131,13 @@ test('updateiOSConfigFiles after replaceInContent keeps a single bundle id line 
 
         const out = await fs.readFile(file, 'utf8');
         assert.deepEqual(linesStartingWith(out, 'PRODUCT_BUNDLE_IDENTIFIER'), [
-            'PRODUCT_BUNDLE_IDENTIFIER=dev.cmpose.app$(TEAM_ID)'
+            'PRODUCT_BUNDLE_IDENTIFIER=dev.cmpose.app'
         ]);
         assert.deepEqual(linesStartingWith(out, 'PRODUCT_NAME'), ['PRODUCT_NAME=My App']);
     });
 });
 
-test('updateiOSConfigFiles adds $(TEAM_ID) when the file has none', async () => {
+test('updateiOSConfigFiles writes the bundle id without $(TEAM_ID) when the file has none', async () => {
     await withTempDir(async (dir) => {
         const configDir = path.join(dir, 'iosApp', 'Configuration');
         await fs.ensureDir(configDir);
@@ -140,7 +148,7 @@ test('updateiOSConfigFiles adds $(TEAM_ID) when the file has none', async () => 
 
         const out = await fs.readFile(file, 'utf8');
         assert.deepEqual(linesStartingWith(out, 'PRODUCT_BUNDLE_IDENTIFIER'), [
-            'PRODUCT_BUNDLE_IDENTIFIER=dev.cmpose.app$(TEAM_ID)'
+            'PRODUCT_BUNDLE_IDENTIFIER=dev.cmpose.app'
         ]);
     });
 });
