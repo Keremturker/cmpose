@@ -1,6 +1,6 @@
 {
   "name": "@cmpose/core",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "description": "cmpose project generator core (Compose Multiplatform)",
   "license": "MIT",
   "repository": {
