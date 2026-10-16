@@ -11,6 +11,7 @@
   "scripts": {
     "test": "npm test --workspaces --if-present",
     "scan": "bash scripts/privacy-scan.sh",
-    "scan:test": "bash scripts/privacy-scan.test.sh"
+    "scan:test": "bash scripts/privacy-scan.test.sh",
+    "guide:check": "bash scripts/check-guide.sh"
   }
 }

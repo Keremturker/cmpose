@@ -56,7 +56,9 @@ check 'personal name' '-i' 'kerem|t(u|ü|Ü)rker' "$NAME_ALLOW"
 #                                        ending in Version, at the start of the line (Unity ProjectSettings'
 #                                        XboxOneVersion:), not an address; 'Server Version: 8.8.8.8' or a
 #                                        'Version:' later in a line is still reported
-IPV4_ALLOW='(^|[^0-9.])((192\.0\.2|198\.51\.100|203\.0\.113)\.[0-9]{1,3}|127\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})([^0-9.]|$)|^[[:space:]]*[A-Za-z0-9_]*Version:[[:space:]]*([0-9]{1,3}\.){3}[0-9]{1,3}([^0-9.]|$)'
+#   d="M…"                               an SVG path's data (docs/guide.html icons: '1.41.39.39' is four
+#                                        coordinates); the rest of the line is still checked
+IPV4_ALLOW='(^|[^0-9.])((192\.0\.2|198\.51\.100|203\.0\.113)\.[0-9]{1,3}|127\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})([^0-9.]|$)|^[[:space:]]*[A-Za-z0-9_]*Version:[[:space:]]*([0-9]{1,3}\.){3}[0-9]{1,3}([^0-9.]|$)|([[:space:]<])d="M[^"]*"'
 check 'IPv4 address' '' '\b([0-9]{1,3}\.){3}[0-9]{1,3}\b' "$IPV4_ALLOW"
 
 # A 40-hex literal looks like a git commit and may name an object of a private repository.

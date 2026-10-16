@@ -14,12 +14,14 @@ leaderboards"): a Unity 6 (URP) Android + iOS project from the pinned game templ
 `blank` game with flags for saving, theming, multi-language, networking, RevenueCat purchases,
 AdMob ads and Play Games / Game Center leaderboards, up to 3 feature modules and your real IDs.
 
-- `@cmpose/core` — the generator library (the same code [cmpose.dev](https://cmpose.dev) runs).
+- `@cmpose/core` — the generator library.
 - `@cmpose/mcp` — a local stdio MCP server with four tools: `cmp_describe`, `cmp_generate`,
   `game_describe` and `game_generate`.
 
 Requires Node.js 20+ and git. The first generation downloads the pinned template
 (`whinstudio/cmpose-template`) into `~/.cache/cmpose` (override: `CMPOSE_CACHE_DIR`).
+
+Developer guide (architecture, modules, backend, release): https://whinstudio.github.io/cmpose/guide.html
 
 ## Use with Claude Code
 

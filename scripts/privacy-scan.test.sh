@@ -36,6 +36,7 @@ plant bad other-repo.txt        'git clone Keremturker/Cmp-wizard-backend'
 plant bad cmpose-fork.txt       'Keremturker/cmpose-private'
 plant bad commit-hash.txt       "commit: '0123456789abcdef0123456789abcdef01234567'"
 plant bad ipv4.txt              'host 10.1.2.3 next to 203.0.113.9'
+plant bad ipv4-next-to-svg.txt  '<path d="M1 2c.55 0 1.41.39.39 1"/> host 10.1.2.3'
 plant bad ipv4-after-version.txt 'XboxOneVersion: 1.0.0.0 and host 10.1.2.3'
 plant bad ipv4-spaced-key.txt   'Server Version: 8.8.8.8'
 plant bad ipv4-mid-line.txt     'note: see Version: 8.8.8.8'
@@ -54,7 +55,7 @@ out=$(bash "$SCAN" "$TMP/bad"); code=$?
 if [ "$code" -ne 1 ]; then echo "FAIL: bad repo exited $code, expected 1"; fail=1; fi
 for f in 'name with space.txt' lower-users.txt windows-users.txt home.txt name-kerem-lower.txt \
          name-kerem-upper.txt name-tuerker-title.txt name-tuerker-lower.txt name-tuerker-upper.txt name-turker-ascii.txt \
-         name-kerem-near-kturker.txt name-keremturker-bare.txt ipv4-after-version.txt ipv4-spaced-key.txt ipv4-mid-line.txt template-fork.txt bare-kturker.txt other-repo.txt cmpose-fork.txt commit-hash.txt ipv4.txt secret-ant.txt secret-proj.txt secret-slack.txt \
+         name-kerem-near-kturker.txt name-keremturker-bare.txt ipv4-after-version.txt ipv4-spaced-key.txt ipv4-mid-line.txt template-fork.txt bare-kturker.txt other-repo.txt cmpose-fork.txt commit-hash.txt ipv4.txt ipv4-next-to-svg.txt secret-ant.txt secret-proj.txt secret-slack.txt \
          secret-google.txt secret-ghp.txt secret-aws.txt branch.txt marker-handoff.txt \
          marker-superpowers.txt; do
     printf '%s\n' "$out" | grep -qF -- "$f:1:" || { echo "FAIL: not reported: $f"; fail=1; }
@@ -70,6 +71,7 @@ printf '%s\n' "$out" | sed -n '/^== private backend marker$/,/^==/p' | grep -qF 
 # --- only allowed values: must pass ---------------------------------------------------
 repo clean
 plant clean allowed.txt "$(printf '%s\n' \
+    '<path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 1.41.39.39 1.41-.39.39"/>' \
     "repo: 'Keremturker/CmpTemplate' and 'Keremturker/cmpose-template'" \
     'url https://github.com/Keremturker/cmpose.git and https://github.com/Keremturker/cmpose#readme' \
     "synthetic commits 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' and '0000000000000000000000000000000000000000'" \
