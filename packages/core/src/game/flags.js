@@ -7,7 +7,7 @@ const { readMetaGuid } = require('./guid');
 const { findResidue } = require('./residue');
 const { pruneBuildScenes } = require('./buildScenes');
 
-// cmpose.dev/game: a feature flag is folders + marked C# blocks ('// cmpose:<flag>' … '// /cmpose:<flag>') +
+// cmpose game: a feature flag is folders + marked C# blocks ('// cmpose:<flag>' … '// /cmpose:<flag>') +
 // asmdef references + packages + a scripting define, all listed in the template's .cmpose/flags.json. A flag may
 // require others ("requires"); turning one off turns off the flags that require it. A render
 // other than the upstream one is an overlay under .cmpose/layers/ whose files replace the project's (same guids).

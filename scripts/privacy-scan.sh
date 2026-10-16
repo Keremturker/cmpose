@@ -74,6 +74,8 @@ check 'commit hash' '' "$HEX40" "$HEX_ALLOW"
 check 'secret-looking value' '' '(ghp_|github_pat_|(^|[^A-Za-z0-9])sk-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY|xox[abprs]-|AIza[0-9A-Za-z_-]{35})'
 check 'backend audit branch' '' 'audit/[a-z]'
 check 'private backend marker' '' 'HANDOFF\.md|\.superpowers|Cmp-wizard-backend'
+# The old cmpose domain lapses (anyone may register it): nothing published may name it
+check 'old domain' '-i' 'cmpose\.dev'
 
 if command -v gitleaks >/dev/null 2>&1; then
     gitleaks detect --no-banner --redact -s . || status=1

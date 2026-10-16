@@ -3,7 +3,7 @@ const fs = require('fs-extra');
 const { cloneWithNewGuids } = require('./guid');
 const { MANIFEST } = require('./flags');
 
-// cmpose.dev/game blank modules: each one is a copy of Features/Sample with fresh guids and the Sample names
+// cmpose game blank modules: each one is a copy of Features/Sample with fresh guids and the Sample names
 // renamed, registered in the Game scope (one guarded installer line inside the cmpose:features markers, its using
 // line, the App asmdef reference). A copy carries the Sample's flag parts (Sample/Ads …), so the flag manifest gets
 // their twins and turning a flag off removes them from every copy. Only files are edited; Unity never runs here.

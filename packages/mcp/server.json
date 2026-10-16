@@ -3,7 +3,7 @@
   "name": "io.github.Keremturker/cmpose",
   "title": "cmpose",
   "description": "Generate buildable Compose Multiplatform and Unity game projects locally from tested templates.",
-  "websiteUrl": "https://cmpose.dev",
+  "websiteUrl": "https://github.com/whinstudio/cmpose",
   "repository": {
     "url": "https://github.com/whinstudio/cmpose",
     "source": "github",

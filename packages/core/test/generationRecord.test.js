@@ -40,7 +40,7 @@ test('the generation record names the template, the backend and the options, wit
         now: new Date('2026-09-29T11:00:00.000Z')
     });
     assert.deepEqual(record, {
-        generator: 'cmpose.dev',
+        generator: 'cmpose',
         generatedAt: '2026-09-29T11:00:00.000Z',
         template: { ref: 'refs/tags/template-2026.09.29.2', commit: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' },
         backend: { revision: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb' },

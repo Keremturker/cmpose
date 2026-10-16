@@ -35,7 +35,7 @@ function sanitizeFeaturesConfig(featuresConfig) {
 /** The .cmpose/generation.json content written into the generated project (no personal data) */
 function buildGenerationRecord({ templateRef, templateCommit, backendRevision, templateType, ci, minSdk, iosVersion, features, featuresConfig, now = new Date() }) {
     return {
-        generator: 'cmpose.dev',
+        generator: 'cmpose',
         generatedAt: now.toISOString(),
         template: { ref: templateRef || null, commit: templateCommit || null },
         backend: { revision: backendRevision || null },

@@ -3,11 +3,13 @@
 Ask your AI agent for a **Compose Multiplatform** app and get a real, buildable Android + iOS
 project on disk, generated locally from a tested template. It also generates **Unity** mobile
 games (Android + iOS). This is a local stdio MCP server with four tools: `cmp_describe`,
-`cmp_generate`, `game_describe` and `game_generate`. It is the same generator that runs
-[cmpose.dev](https://cmpose.dev), with no account, no API key and no upload.
+`cmp_generate`, `game_describe` and `game_generate`. It runs on your machine, with no account,
+no API key and no upload.
 
 > "Create a blank Compose Multiplatform app called Habits, package com.acme.habits, in
 > ~/Projects, with Room, light/dark theming and AdMob ads."
+
+Developer guide for generated projects: https://whinstudio.github.io/cmpose/guide.html
 
 ## Install
 

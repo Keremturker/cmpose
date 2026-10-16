@@ -51,17 +51,18 @@ plant bad secret-aws.txt        "AK""IAABCDEFGHIJKLMNOP"
 plant bad branch.txt            'branch audit/some-package'
 plant bad marker-handoff.txt    'read HANDOFF.md first'
 plant bad marker-superpowers.txt 'see .superpowers/sdd'
+plant bad old-domain.txt        "see https://cmpose"".dev/guide.html"
 out=$(bash "$SCAN" "$TMP/bad"); code=$?
 if [ "$code" -ne 1 ]; then echo "FAIL: bad repo exited $code, expected 1"; fail=1; fi
 for f in 'name with space.txt' lower-users.txt windows-users.txt home.txt name-kerem-lower.txt \
          name-kerem-upper.txt name-tuerker-title.txt name-tuerker-lower.txt name-tuerker-upper.txt name-turker-ascii.txt \
          name-kerem-near-kturker.txt name-keremturker-bare.txt ipv4-after-version.txt ipv4-spaced-key.txt ipv4-mid-line.txt template-fork.txt bare-kturker.txt other-repo.txt cmpose-fork.txt commit-hash.txt ipv4.txt ipv4-next-to-svg.txt secret-ant.txt secret-proj.txt secret-slack.txt \
          secret-google.txt secret-ghp.txt secret-aws.txt branch.txt marker-handoff.txt \
-         marker-superpowers.txt; do
+         marker-superpowers.txt old-domain.txt; do
     printf '%s\n' "$out" | grep -qF -- "$f:1:" || { echo "FAIL: not reported: $f"; fail=1; }
 done
 for label in 'private path' 'personal name' 'IPv4 address' 'secret-looking value' \
-             'backend audit branch' 'private backend marker' 'commit hash'; do
+             'backend audit branch' 'private backend marker' 'commit hash' 'old domain'; do
     printf '%s\n' "$out" | grep -qxF -- "== $label" || { echo "FAIL: no section: $label"; fail=1; }
 done
 # The other repo is a backend marker as well as a name

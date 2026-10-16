@@ -1,4 +1,4 @@
-// cmpose.dev/game: Unity's serialized YAML (ProjectSettings.asset, EditorBuildSettings.asset) is edited
+// cmpose game: Unity's serialized YAML (ProjectSettings.asset, EditorBuildSettings.asset) is edited
 // line by line, never through a YAML library: Unity's tags (--- !u!129 &1) and layout must survive.
 // Every editor works inside one document and refuses to guess: no match or more than one throws.
 
