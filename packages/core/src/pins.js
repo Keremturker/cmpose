@@ -1,7 +1,7 @@
 'use strict';
 // The template tags this core version was tested with (immutable tags)
 module.exports = Object.freeze({
-    cmp: Object.freeze({ repo: 'whinstudio/cmpose-template', ref: 'template-2026.10.16' }),
+    cmp: Object.freeze({ repo: 'whinstudio/cmpose-template', ref: 'template-2026.10.16.2' }),
     // The release step replaces the placeholder with the game template's tag
     game: Object.freeze({ repo: 'whinstudio/cmpose-game-template', ref: 'game-template-2026.10.15.2' })
 });
