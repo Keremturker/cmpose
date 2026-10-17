@@ -17,7 +17,7 @@ Requires Node.js 20+ and git.
 
 **Claude Code**
 
-    claude mcp add cmpose -- npx -y @cmpose/mcp
+    claude mcp add -s user cmpose -- npx -y @cmpose/mcp
 
 **Claude Desktop, Cursor, Windsurf and other MCP clients** (`mcpServers` config):
 

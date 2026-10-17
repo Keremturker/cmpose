@@ -25,7 +25,18 @@ Developer guide (architecture, modules, backend, release): https://whinstudio.gi
 
 ## Use with Claude Code
 
-    claude mcp add cmpose -- npx -y @cmpose/mcp
+    claude mcp add -s user cmpose -- npx -y @cmpose/mcp
+
+`-s user` makes the server available in every directory; without it, it is added only for the
+directory you run the command in.
+
+Optional skills for Claude Code live in [whinstudio/skills](https://github.com/whinstudio/skills):
+`cmp-new-project` generates a project through this server asking only four questions, and
+`cmp-feature`, `cmp-code-rules`, `cmp-testing` and others help when working in a generated
+project. Install one into `~/.claude/skills/`:
+
+    git clone https://github.com/whinstudio/skills.git
+    ln -s "$PWD/skills/cmp-new-project" ~/.claude/skills/cmp-new-project
 
 ## Use with other MCP clients
 
